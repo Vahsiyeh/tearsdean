@@ -16,12 +16,8 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, uploadDir);
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + '-' + file.originalname);
-    }
+    destination: (req, file, cb) => cb(null, uploadDir),
+    filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
 });
 
 const upload = multer({ storage });
@@ -29,11 +25,7 @@ const dbFile = path.join(__dirname, 'contents.json');
 
 function getContents() {
     if (!fs.existsSync(dbFile)) return [];
-    try {
-        return JSON.parse(fs.readFileSync(dbFile, 'utf8'));
-    } catch {
-        return [];
-    }
+    try { return JSON.parse(fs.readFileSync(dbFile, 'utf8')); } catch { return []; }
 }
 
 function saveContents(contents) {
@@ -54,17 +46,17 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
         type: req.body.type || 'video',
         fileUrl: `/uploads/${req.file.filename}`,
         thumbnailUrl: req.body.thumbnailUrl || `/uploads/${req.file.filename}`,
-        duration: req.body.duration || '0:30',
+        duration: req.body.duration || '0:00',
         authorName: req.body.authorName || 'User',
         authorHandle: req.body.authorHandle || 'user',
         authorAvatar: req.body.authorAvatar || '',
         authorBg: req.body.authorBg || '#a855f7',
+        authorEmail: req.body.authorEmail || '',
         views: 1,
         viewedUsers: [req.body.authorEmail || 'guest'],
         likes: 0,
         likedUsers: [],
-        comments: [],
-        subscribers: []
+        comments: []
     };
 
     const contents = getContents();
@@ -73,7 +65,6 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
     res.json({ success: true, content: newContent });
 });
 
-// Like Güncelleme
 app.post('/api/contents/:id/like', (req, res) => {
     const id = Number(req.params.id);
     const { email } = req.body;
@@ -98,7 +89,6 @@ app.post('/api/contents/:id/like', (req, res) => {
     res.json({ success: true, likes: item.likes, liked });
 });
 
-// Yorum Ekleme
 app.post('/api/contents/:id/comment', (req, res) => {
     const id = Number(req.params.id);
     const { text, authorName, authorHandle, authorAvatar, authorBg } = req.body;
@@ -129,6 +119,4 @@ app.delete('/api/contents/:id', (req, res) => {
     res.json({ success: true });
 });
 
-app.listen(PORT, () => {
-    console.log(`Sunucu aktif: http://localhost:${PORT}`);
-});
+app.listen(PORT, () => console.log(`Sunucu aktif: http://localhost:${PORT}`));
