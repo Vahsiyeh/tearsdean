@@ -45,17 +45,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const emptyChannelFeed = document.getElementById('emptyChannelFeed');
     const homeLogoBtn = document.getElementById('homeLogoBtn');
 
-    // MY ACCOUNT SIDEBAR SUBMENU ELEMANLARI
     const myAccountToggleBtn = document.getElementById('myAccountToggleBtn');
     const myAccountSubmenu = document.getElementById('myAccountSubmenu');
     const myAccountArrow = document.getElementById('myAccountArrow');
 
-    // ARAMA ELEMANLARI
     const searchInput = document.getElementById('searchInput');
     const searchSubmitBtn = document.getElementById('searchSubmitBtn');
     const topLoadingBar = document.getElementById('topLoadingBar');
 
-    // İZLEME PANELİ
     const mainVideoPlayer = document.getElementById('mainVideoPlayer');
     const watchTitle = document.getElementById('watchTitle');
     const watchAvatar = document.getElementById('watchAvatar');
@@ -64,10 +61,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const watchViewsDate = document.getElementById('watchViewsDate');
     const watchDesc = document.getElementById('watchDesc');
 
-    // AUTH ELEMANLARI
     const openAuthBtn = document.getElementById('openAuthBtn');
     const authModal = document.getElementById('authModal');
-    const closeAuthModalBtn = document.getElementById('closeAuthModalBtn');
     const authStepLogin = document.getElementById('authStepLogin');
     const authStepProfile = document.getElementById('authStepProfile');
     const googleAuthBtn = document.getElementById('googleAuthBtn');
@@ -154,6 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
     }
 
+    // ZORUNLU GİRİŞ KONTROLÜ (Google veya Apple cihaz şartı)
     function checkSavedSession() {
         const activeEmail = localStorage.getItem('yt_active_email');
         const allChannels = JSON.parse(localStorage.getItem('yt_all_channels') || '{}');
@@ -163,11 +159,15 @@ document.addEventListener('DOMContentLoaded', () => {
             currentUserData = allChannels[activeEmail];
             isLoggedIn = true;
             applyUserSession(currentUserData);
+            loadFeed('all');
         } else {
             isLoggedIn = false;
             currentUserData = null;
+            // Zorunlu Giriş Modalını Aç (Kapatılamaz, zorunlu!)
+            authStepLogin.style.display = 'block';
+            authStepProfile.style.display = 'none';
+            authModal.classList.add('active');
         }
-        loadFeed();
     }
 
     function applyUserSession(user) {
@@ -193,18 +193,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     checkSavedSession();
 
-    // ==========================================
-    // MY ACCOUNT AÇILIR MENÜSÜ
-    // ==========================================
     myAccountToggleBtn.addEventListener('click', () => {
         const isOpen = myAccountSubmenu.style.display === 'flex';
         myAccountSubmenu.style.display = isOpen ? 'none' : 'flex';
         myAccountArrow.classList.toggle('rotated', !isOpen);
     });
 
-    // ==========================================
-    // FEED & ARAMA
-    // ==========================================
+    // FEED & HOME / POSTS AYRIMI
     function loadFeed(filterType = 'all', searchQuery = '') {
         triggerLoadingBar();
         homeView.style.display = 'block';
@@ -216,8 +211,11 @@ document.addEventListener('DOMContentLoaded', () => {
         feedGrid.innerHTML = '';
 
         let filtered = allContents;
-        if (filterType === 'posts') filtered = allContents.filter(c => c.type === 'post');
-        else if (filterType === 'videos') filtered = allContents.filter(c => c.type === 'video');
+        if (filterType === 'posts') {
+            filtered = allContents.filter(c => c.type === 'post');
+        } else if (filterType === 'videos') {
+            filtered = allContents.filter(c => c.type === 'video');
+        }
 
         if (searchQuery.trim() !== '') {
             const q = searchQuery.toLowerCase().trim();
@@ -283,9 +281,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ==========================================
-    // KANAL VİDEOLARI YÖNETİMİ & ŞIK DELETE BUTONU
-    // ==========================================
     function loadChannelPage() {
         if (!isLoggedIn || !currentUserData) {
             authModal.classList.add('active');
@@ -377,11 +372,7 @@ document.addEventListener('DOMContentLoaded', () => {
         channelView.style.display = 'none';
         watchView.style.display = 'flex';
 
-        const viewerId = currentEmail || localStorage.getItem('yt_guest_id') || ('guest_' + Math.random());
-        if (!currentEmail && !localStorage.getItem('yt_guest_id')) {
-            localStorage.setItem('yt_guest_id', viewerId);
-        }
-
+        const viewerId = currentEmail || 'guest';
         if (!item.viewedUsers) item.viewedUsers = [];
 
         if (!item.viewedUsers.includes(viewerId)) {
@@ -423,9 +414,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loadFeed('all');
     });
 
-    // ==========================================
     // GOOGLE AUTH
-    // ==========================================
     function initGoogleAuth() {
         if (typeof google !== 'undefined' && google.accounts) {
             tokenClient = google.accounts.oauth2.initTokenClient({
@@ -438,8 +427,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         })
                         .then(res => res.json())
                         .then(data => {
-                            const email = data.email || "freezyofficial@gmail.com";
-                            processGoogleLoginFlow(email, data.name || 'FreezyOfficial0', data.picture);
+                            const email = data.email || "user@gmail.com";
+                            processGoogleLoginFlow(email, data.name || 'Google User', data.picture);
                         });
                     }
                 }
@@ -450,7 +439,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     googleAuthBtn.addEventListener('click', () => {
         if (tokenClient) tokenClient.requestAccessToken({ prompt: 'select_account' });
-        else processGoogleLoginFlow("freezyofficial@gmail.com", "FreezyOfficial0", null);
+        else processGoogleLoginFlow("google_user@gmail.com", "Google User", null);
+    });
+
+    appleAuthBtn.addEventListener('click', () => {
+        processGoogleLoginFlow("apple_user@icloud.com", "Apple Device User", null);
     });
 
     function processGoogleLoginFlow(email, defaultName, defaultAvatar) {
@@ -460,14 +453,11 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('yt_active_email', email);
             authModal.classList.remove('active');
             applyUserSession(allChannels[email]);
+            loadFeed('all');
             return;
         }
         startProfileSetup(defaultName, defaultAvatar);
     }
-
-    appleAuthBtn.addEventListener('click', () => {
-        processGoogleLoginFlow("apple_user@icloud.com", "Apple User", null);
-    });
 
     function startProfileSetup(defaultName, avatarUrl) {
         authStepLogin.style.display = 'none';
@@ -559,6 +549,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!takenHandles.includes(handle)) takenHandles.push(handle);
         applyUserSession(userData);
         authModal.classList.remove('active');
+        loadFeed('all');
     });
 
     userAvatarBtn.addEventListener('click', (e) => {
@@ -568,22 +559,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('click', () => profileDropdown.classList.remove('active'));
     profileDropdown.addEventListener('click', (e) => e.stopPropagation());
 
-    // SAĞ ÜST DROPDOWN: YOUR CHANNEL
     menuYourChannel.addEventListener('click', () => {
         profileDropdown.classList.remove('active');
-        if (!isLoggedIn) {
-            authModal.classList.add('active');
-            return;
-        }
         loadChannelPage();
     });
 
-    // SOL MENÜDEN YOUR CHANNEL (MY ACCOUNT ALTINDAKİ)
     document.querySelector('.submenu-item[data-nav="your-channel"]').addEventListener('click', () => {
-        if (!isLoggedIn) {
-            authModal.classList.add('active');
-            return;
-        }
         loadChannelPage();
     });
 
@@ -591,6 +572,8 @@ document.addEventListener('DOMContentLoaded', () => {
         profileDropdown.classList.remove('active');
         alert('Opening Account Settings...');
     });
+
+    // Çıkış yapınca tekrar Google/Apple zorunlu giriş ekranını patlatıyoruz
     logoutBtn.addEventListener('click', () => {
         localStorage.removeItem('yt_active_email');
         isLoggedIn = false;
@@ -599,24 +582,16 @@ document.addEventListener('DOMContentLoaded', () => {
         profileDropdown.classList.remove('active');
         userProfile.style.display = 'none';
         openAuthBtn.style.display = 'flex';
-        loadFeed();
-    });
-
-    openAuthBtn.addEventListener('click', () => {
-        const activeEmail = localStorage.getItem('yt_active_email');
-        const allChannels = JSON.parse(localStorage.getItem('yt_all_channels') || '{}');
-        if (activeEmail && allChannels[activeEmail]) {
-            applyUserSession(allChannels[activeEmail]);
-            return;
-        }
+        
         authStepLogin.style.display = 'block';
         authStepProfile.style.display = 'none';
         authModal.classList.add('active');
     });
 
-    closeAuthModalBtn.addEventListener('click', () => authModal.classList.remove('active'));
-    authModal.classList.addEventListener && authModal.addEventListener('click', (e) => {
-        if (e.target === authModal) authModal.classList.remove('active');
+    openAuthBtn.addEventListener('click', () => {
+        authStepLogin.style.display = 'block';
+        authStepProfile.style.display = 'none';
+        authModal.classList.add('active');
     });
 
     navItems.forEach(item => {
@@ -624,8 +599,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const pageTarget = item.dataset.nav;
             if (pageTarget === 'upload') {
                 if (!isLoggedIn) {
-                    authStepLogin.style.display = 'block';
-                    authStepProfile.style.display = 'none';
                     authModal.classList.add('active');
                     return;
                 }
@@ -646,8 +619,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     createBtn.addEventListener('click', () => {
         if (!isLoggedIn) {
-            authStepLogin.style.display = 'block';
-            authStepProfile.style.display = 'none';
             authModal.classList.add('active');
             return;
         }
