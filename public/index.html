@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YT Clone - Ferah Tasarım</title>
+    <title>YT Clone - Responsive & Ferah</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
@@ -112,7 +112,6 @@
                 </div>
             </div>
 
-            <!-- POSTS VIEW (Sosyal Medya Kartları) -->
             <div id="postsView" style="display: none;">
                 <div class="posts-feed-container" id="postsFeedGrid"></div>
                 <div class="empty-feed" id="emptyPostsFeed" style="display: none;">
@@ -219,7 +218,7 @@
         </main>
     </div>
 
-    <!-- CREATE MODAL (Ferah & Gelişmiş) -->
+    <!-- CREATE MODAL (Responsive & Ekrana Sığan Yapı) -->
     <div class="modal-overlay" id="createModal">
         <div class="modal-card">
             <div class="modal-header">
@@ -279,7 +278,15 @@
                         <div id="imagePostInputsContainer">
                             <div class="form-group">
                                 <label>Attach Image (Optional)</label>
-                                <input type="file" id="postImageInput" accept="image/*" class="form-input">
+                                <div class="upload-dropzone" id="postDropzone">
+                                    <svg viewBox="0 0 24 24" class="upload-icon"><path fill="currentColor" d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg>
+                                    <p id="postUploadText">Select Image File to Upload</p>
+                                    <input type="file" id="postImageInput" accept="image/*" hidden>
+                                    <button class="select-file-btn" id="selectPostFileBtn" type="button">Select Image</button>
+                                </div>
+                                <div class="selected-file-info" id="postFileInfo" style="display: none; margin-top: 8px;">
+                                    <span>Selected Image:</span> <strong id="postFileName">image.png</strong>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -353,7 +360,7 @@
         </div>
     </div>
 
-    <!-- POST COMMENT MODAL / EXPAND -->
+    <!-- POST COMMENT MODAL -->
     <div class="modal-overlay" id="postModalOverlay">
         <div class="modal-card post-modal-card">
             <div class="modal-header">
