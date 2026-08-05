@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YT Clone</title>
+    <title>YT Clone - Ferah Tasarım</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
@@ -107,8 +107,16 @@
             <div id="homeView">
                 <div class="feed-grid" id="feedGrid"></div>
                 <div class="empty-feed" id="emptyFeed" style="display: none;">
-                    <h3>No content uploaded yet!</h3>
-                    <p>Click on "Create" or "Upload content" in the sidebar to publish your first video or post.</p>
+                    <h3>No videos uploaded yet!</h3>
+                    <p>Click on "Create" or "Upload content" in the sidebar to publish your first video.</p>
+                </div>
+            </div>
+
+            <!-- POSTS VIEW (Sosyal Medya Kartları) -->
+            <div id="postsView" style="display: none;">
+                <div class="posts-feed-container" id="postsFeedGrid"></div>
+                <div class="empty-feed" id="emptyPostsFeed" style="display: none;">
+                    <h3>No posts or polls created yet!</h3>
                 </div>
             </div>
 
@@ -116,14 +124,17 @@
                 <div class="channel-profile-header">
                     <div class="channel-big-avatar" id="channelBigAvatar">U</div>
                     <div class="channel-profile-info">
-                        <h2 id="channelProfileName">Channel Name</h2>
+                        <div class="channel-name-row">
+                            <h2 id="channelProfileName">Channel Name</h2>
+                            <span id="verifiedBadgeChannel" class="verified-badge" style="display:none;" title="Verified">✓</span>
+                        </div>
                         <span id="channelProfileHandle">@handle</span>
                         <button class="subscribe-main-btn" id="subscribeMainBtn">Follow</button>
                     </div>
                 </div>
                 <div class="feed-grid" id="channelGrid"></div>
                 <div class="empty-feed" id="emptyChannelFeed" style="display: none;">
-                    <h3>This channel has no videos yet!</h3>
+                    <h3>This channel has no contents yet!</h3>
                 </div>
             </div>
 
@@ -166,7 +177,10 @@
                         <div class="watch-channel-info" id="watchChannelRowClick" style="cursor: pointer;">
                             <div class="watch-avatar" id="watchAvatar">U</div>
                             <div>
-                                <h4 id="watchChannelName">Channel Name</h4>
+                                <div class="name-badge-inline">
+                                    <h4 id="watchChannelName">Channel Name</h4>
+                                    <span id="verifiedBadgeWatch" class="verified-badge" style="display:none;" title="Verified">✓</span>
+                                </div>
                                 <span id="watchHandle">@handle</span>
                             </div>
                         </div>
@@ -181,7 +195,7 @@
                             </div>
                             <button class="action-btn repost-action-btn" id="repostBtn">
                                 <svg viewBox="0 0 24 24" class="action-icon"><path fill="currentColor" d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>
-                                <span>Repost</span>
+                                <span id="repostBtnText">Repost</span>
                             </button>
                         </div>
                     </div>
@@ -205,7 +219,7 @@
         </main>
     </div>
 
-    <!-- CREATE MODAL -->
+    <!-- CREATE MODAL (Ferah & Gelişmiş) -->
     <div class="modal-overlay" id="createModal">
         <div class="modal-card">
             <div class="modal-header">
@@ -214,8 +228,8 @@
             </div>
             <div class="wizard-steps">
                 <div class="step-item active" data-step="1"><span>1</span> Choose Type</div>
-                <div class="step-item" data-step="2"><span>2</span> Upload File</div>
-                <div class="step-item" data-step="3"><span>3</span> Details & Thumbnail</div>
+                <div class="step-item" data-step="2"><span>2</span> Content or Poll</div>
+                <div class="step-item" data-step="3"><span>3</span> Details</div>
                 <div class="step-item" data-step="4"><span>4</span> Publish</div>
             </div>
             <div class="modal-body">
@@ -229,27 +243,51 @@
                         </div>
                         <div class="type-card" data-type="post">
                             <svg viewBox="0 0 24 24" class="type-icon"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM7 7h10v2H7V7zm0 4h10v2H7v-2zm0 4h7v2H7v-2z"/></svg>
-                            <h4>Post</h4>
-                            <p>Create a text post or update for your feed.</p>
+                            <h4>Post / Poll</h4>
+                            <p>Create a text post, image or voting poll.</p>
                         </div>
                     </div>
                 </div>
                 <div class="wizard-page" id="step2">
-                    <p class="step-desc" id="step2Desc">Drag and drop your file or click to browse:</p>
-                    <div class="upload-dropzone" id="dropzone">
-                        <svg viewBox="0 0 24 24" class="upload-icon"><path fill="currentColor" d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg>
-                        <p id="uploadText">Select File to Upload</p>
-                        <input type="file" id="fileInput" accept="video/*" hidden>
-                        <button class="select-file-btn" id="selectFileBtn">Select File</button>
+                    <div id="videoUploadSection">
+                        <p class="step-desc">Upload your video file:</p>
+                        <div class="upload-dropzone" id="dropzone">
+                            <svg viewBox="0 0 24 24" class="upload-icon"><path fill="currentColor" d="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z"/></svg>
+                            <p id="uploadText">Select Video File to Upload</p>
+                            <input type="file" id="fileInput" accept="video/*" hidden>
+                            <button class="select-file-btn" id="selectFileBtn">Select File</button>
+                        </div>
+                        <div class="selected-file-info" id="fileInfo" style="display: none;">
+                            <span>Selected File:</span> <strong id="fileName">file.mp4</strong>
+                        </div>
                     </div>
-                    <div class="selected-file-info" id="fileInfo" style="display: none;">
-                        <span>Selected File:</span> <strong id="fileName">file.mp4</strong>
+                    <div id="postCreationSection" style="display: none;">
+                        <div class="form-group">
+                            <label>Post Type</label>
+                            <div class="post-type-selector">
+                                <button type="button" class="post-type-tab active" id="tabTextPost">Text / Image</button>
+                                <button type="button" class="post-type-tab" id="tabPollPost">Voting Poll</button>
+                            </div>
+                        </div>
+                        <div id="pollInputsContainer" style="display: none;">
+                            <div class="form-group"><label>Poll Question</label><input type="text" id="pollQuestionInput" class="form-input" placeholder="Ask a question..."></div>
+                            <div class="form-group"><label>Option 1</label><input type="text" id="pollOpt1" class="form-input" placeholder="Option 1"></div>
+                            <div class="form-group"><label>Option 2</label><input type="text" id="pollOpt2" class="form-input" placeholder="Option 2"></div>
+                            <div class="form-group"><label>Option 3 (Optional)</label><input type="text" id="pollOpt3" class="form-input" placeholder="Option 3"></div>
+                            <div class="form-group"><label>Option 4 (Optional)</label><input type="text" id="pollOpt4" class="form-input" placeholder="Option 4"></div>
+                        </div>
+                        <div id="imagePostInputsContainer">
+                            <div class="form-group">
+                                <label>Attach Image (Optional)</label>
+                                <input type="file" id="postImageInput" accept="image/*" class="form-input">
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="wizard-page" id="step3">
                     <div class="form-group">
-                        <label for="contentTitle">Title (Required)</label>
-                        <input type="text" id="contentTitle" class="form-input" placeholder="Title">
+                        <label for="contentTitle">Title / Caption (Required)</label>
+                        <input type="text" id="contentTitle" class="form-input" placeholder="Title or text content">
                     </div>
                     <div class="form-group">
                         <label for="contentDesc">Description</label>
@@ -284,7 +322,7 @@
                     <button class="modal-close-btn" id="closeAuthModalBtn">&times;</button>
                 </div>
                 <div class="modal-body auth-body-only">
-                    <p class="auth-subtext">Sign in with Google to continue.</p>
+                    <p class="auth-subtext">Sign in with Google to sync your account securely.</p>
                     <button class="social-btn google-btn" id="googleAuthBtn">
                         <svg viewBox="0 0 24 24" class="social-icon"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
                         <span>Continue with Google</span>
@@ -312,6 +350,17 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- POST COMMENT MODAL / EXPAND -->
+    <div class="modal-overlay" id="postModalOverlay">
+        <div class="modal-card post-modal-card">
+            <div class="modal-header">
+                <h3>Post Details</h3>
+                <button class="modal-close-btn" id="closePostModalBtn">&times;</button>
+            </div>
+            <div class="modal-body" id="postModalBody"></div>
         </div>
     </div>
 
