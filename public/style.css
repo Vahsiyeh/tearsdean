@@ -54,11 +54,10 @@ body { background-color: #0f0f0f; color: #f1f1f1; overflow-x: hidden; }
 .empty-feed { text-align: center; margin-top: 80px; color: #777; }
 .empty-feed h3 { font-size: 20px; color: #aaa; margin-bottom: 8px; }
 
-/* Onaylı Hesap Tik (Verified Badge) Stili */
 .verified-badge { display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; background-color: #3ea6ff; color: #0f0f0f; border-radius: 50%; font-size: 10px; font-weight: bold; margin-left: 5px; vertical-align: middle; }
 .name-badge-inline { display: flex; align-items: center; }
 
-/* Video Kartları (Ferah & Yuvarlak Köşeler) */
+/* Video Kartları (Hover Efekti ile) */
 .yt-video-card { display: flex; flex-direction: column; cursor: pointer; gap: 12px; transition: transform 0.2s ease; }
 .yt-video-card:hover { transform: translateY(-4px); }
 .yt-thumbnail-wrapper { width: 100%; aspect-ratio: 16 / 9; background-color: #1f1f1f; border-radius: 16px; overflow: hidden; position: relative; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
@@ -71,7 +70,7 @@ body { background-color: #0f0f0f; color: #f1f1f1; overflow-x: hidden; }
 .yt-channel-name, .yt-video-stats { font-size: 13px; color: #aaa; }
 .yt-channel-name:hover { color: #fff; }
 
-/* SOSYAL MEDYA POSTLARI (Posts Sekmesi) */
+/* SOSYAL MEDYA POSTLARI */
 .posts-feed-container { display: flex; flex-direction: column; gap: 20px; max-width: 680px; margin: 0 auto; }
 .post-card { background-color: #181818; border: 1px solid #2a2a2a; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
 .post-header { display: flex; align-items: center; gap: 12px; }
@@ -80,7 +79,7 @@ body { background-color: #0f0f0f; color: #f1f1f1; overflow-x: hidden; }
 .post-body-text { font-size: 15px; color: #f1f1f1; line-height: 1.5; white-space: pre-wrap; }
 .post-body-image { width: 100%; border-radius: 12px; max-height: 450px; object-fit: cover; margin-top: 8px; }
 
-/* ANKET (POLL) STİLLERİ */
+/* ANKET STİLLERİ */
 .poll-container { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
 .poll-option-btn { background-color: #222; border: 1px solid #383838; border-radius: 8px; padding: 12px 16px; color: #fff; text-align: left; font-size: 14px; cursor: pointer; transition: background-color 0.15s; position: relative; overflow: hidden; }
 .poll-option-btn:hover { background-color: #2d2d2d; }
@@ -107,7 +106,7 @@ body { background-color: #0f0f0f; color: #f1f1f1; overflow-x: hidden; }
 .subscribe-main-btn.subscribed, .subscribe-btn.subscribed { background-color: #272727; color: #f1f1f1; }
 .subscribe-main-btn.subscribed:hover, .subscribe-btn.subscribed:hover { background-color: #3f3f3f; }
 
-/* Özel Video Oynatıcı (Ferah & Şık) */
+/* Özel Video Oynatıcı */
 .watch-page-container { display: flex; max-width: 1280px; margin: 0 auto; flex-direction: column; }
 .watch-main-column { display: flex; flex-direction: column; gap: 16px; }
 
@@ -134,7 +133,7 @@ body { background-color: #0f0f0f; color: #f1f1f1; overflow-x: hidden; }
 .time-display { color: #fff; font-size: 13px; user-select: none; }
 
 .watch-video-title { font-size: 22px; font-weight: 700; color: #fff; }
-.watch-channel-row { display: flex; justify-content: space-between; align-items: center; }
+.watch-channel-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
 .watch-channel-info { display: flex; align-items: center; gap: 14px; }
 .watch-avatar { width: 44px; height: 44px; border-radius: 50%; background-color: #a855f7; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; overflow: hidden; }
 .watch-avatar img { width: 100%; height: 100%; object-fit: cover; }
@@ -187,20 +186,21 @@ body { background-color: #0f0f0f; color: #f1f1f1; overflow-x: hidden; }
 .nav-item.active .icon-outline { display: none !important; }
 .nav-divider { border: 0; height: 1px; background-color: #222; margin: 12px 0; }
 
-.modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0,0,0,0.8); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.2s; }
+/* MODAL & RESPONSIVE DÜZENLEMELERİ (Ekrana Sığma ve Taşma Önleme) */
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0,0,0,0.8); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.2s; padding: 16px; }
 .modal-overlay.active { opacity: 1; visibility: visible; }
-.modal-card { background-color: #1f1f1f; border: 1px solid #333; width: 100%; max-width: 720px; border-radius: 20px; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.9); }
-.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; border-bottom: 1px solid #2a2a2a; }
+.modal-card { background-color: #1f1f1f; border: 1px solid #333; width: 100%; max-width: 680px; max-height: 85vh; border-radius: 20px; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.9); overflow: hidden; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 1px solid #2a2a2a; flex-shrink: 0; }
 .modal-header h3 { font-size: 18px; color: #fff; font-weight: 500; }
 .modal-close-btn { background: none; border: none; color: #aaa; font-size: 26px; cursor: pointer; transition: color 0.15s ease; }
 .modal-close-btn:hover { color: #fff; }
 
-.wizard-steps { display: flex; justify-content: space-between; padding: 16px 24px; background-color: #171717; border-bottom: 1px solid #2a2a2a; }
+.wizard-steps { display: flex; justify-content: space-between; padding: 14px 24px; background-color: #171717; border-bottom: 1px solid #2a2a2a; flex-shrink: 0; }
 .step-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #777; font-weight: 500; }
-.step-item span { width: 24px; height: 24px; border-radius: 50%; background-color: #282828; color: #aaa; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+.step-item span { width: 22px; height: 22px; border-radius: 50%; background-color: #282828; color: #aaa; display: flex; align-items: center; justify-content: center; font-size: 11px; }
 .step-item.active { color: #fff; }
 .step-item.active span { background-color: #3ea6ff; color: #000; font-weight: 700; }
-.modal-body { padding: 24px; }
+.modal-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
 .wizard-page { display: none; }
 .wizard-page.active { display: block; }
 .type-selection-grid { display: flex; gap: 16px; }
@@ -215,30 +215,30 @@ body { background-color: #0f0f0f; color: #f1f1f1; overflow-x: hidden; }
 .post-type-tab { flex: 1; background-color: #171717; border: 1px solid #333; border-radius: 8px; padding: 10px; color: #aaa; font-weight: 500; cursor: pointer; transition: all 0.15s; }
 .post-type-tab.active { background-color: #3ea6ff; color: #0f0f0f; border-color: #3ea6ff; }
 
-.upload-dropzone { border: 2px dashed #444; border-radius: 16px; padding: 40px 20px; text-align: center; background-color: #171717; display: flex; flex-direction: column; align-items: center; gap: 10px; }
-.upload-icon { width: 48px; height: 48px; fill: #aaa; }
+.upload-dropzone { border: 2px dashed #444; border-radius: 16px; padding: 32px 20px; text-align: center; background-color: #171717; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.upload-icon { width: 44px; height: 44px; fill: #aaa; }
 .select-file-btn { margin-top: 10px; background-color: #3ea6ff; color: #0f0f0f; border: none; padding: 10px 22px; border-radius: 20px; font-weight: 500; cursor: pointer; transition: background-color 0.15s ease, transform 0.1s ease; }
 .select-file-btn:hover { background-color: #65b8ff; }
 .select-file-btn:active { transform: scale(0.95); }
 
-.form-group { margin-bottom: 16px; }
-.form-group label { display: block; font-size: 14px; margin-bottom: 8px; color: #ddd; }
-.form-input, .form-textarea { width: 100%; background-color: #121212; border: 1px solid #333; border-radius: 10px; padding: 12px 14px; color: #fff; font-size: 14px; outline: none; transition: border-color 0.2s; }
+.form-group { margin-bottom: 14px; }
+.form-group label { display: block; font-size: 14px; margin-bottom: 6px; color: #ddd; }
+.form-input, .form-textarea { width: 100%; background-color: #121212; border: 1px solid #333; border-radius: 10px; padding: 10px 14px; color: #fff; font-size: 14px; outline: none; transition: border-color 0.2s; }
 .form-input:focus, .form-textarea:focus { border-color: #3ea6ff; }
-.form-textarea { height: 90px; resize: none; }
+.form-textarea { height: 75px; resize: none; }
 
-.auto-thumb-grid { display: flex; gap: 10px; margin-top: 10px; }
+.auto-thumb-grid { display: flex; gap: 10px; margin-top: 8px; }
 .auto-thumb-option { flex: 1; aspect-ratio: 16/9; border: 2px solid #333; border-radius: 8px; overflow: hidden; cursor: pointer; }
 .auto-thumb-option img { width: 100%; height: 100%; object-fit: cover; }
 .auto-thumb-option.selected { border-color: #3ea6ff; }
 
-.summary-card { background-color: #171717; border: 1px solid #2a2a2a; border-radius: 12px; padding: 20px; }
-.summary-card h4 { margin-bottom: 14px; color: #fff; font-size: 16px; border-bottom: 1px solid #2a2a2a; padding-bottom: 8px; }
-.summary-item { display: flex; justify-content: solid; font-size: 14px; margin-bottom: 10px; }
+.summary-card { background-color: #171717; border: 1px solid #2a2a2a; border-radius: 12px; padding: 16px; }
+.summary-card h4 { margin-bottom: 10px; color: #fff; font-size: 16px; border-bottom: 1px solid #2a2a2a; padding-bottom: 6px; }
+.summary-item { display: flex; font-size: 14px; margin-bottom: 8px; }
 .summary-item span { color: #aaa; margin-right: 10px; }
 
-.modal-footer { display: flex; justify-content: flex-end; gap: 12px; padding: 18px 24px; border-top: 1px solid #2a2a2a; background-color: #171717; border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; }
-.btn-primary, .btn-secondary { padding: 10px 24px; border-radius: 20px; font-size: 14px; font-weight: 500; cursor: pointer; border: none; transition: background-color 0.15s ease, transform 0.1s ease; }
+.modal-footer { display: flex; justify-content: flex-end; gap: 12px; padding: 16px 24px; border-top: 1px solid #2a2a2a; background-color: #171717; flex-shrink: 0; }
+.btn-primary, .btn-secondary { padding: 10px 22px; border-radius: 20px; font-size: 14px; font-weight: 500; cursor: pointer; border: none; transition: background-color 0.15s ease, transform 0.1s ease; }
 .btn-primary { background-color: #3ea6ff; color: #0f0f0f; }
 .btn-primary:hover { background-color: #65b8ff; }
 .btn-primary:active { transform: scale(0.95); }
@@ -261,3 +261,18 @@ body { background-color: #0f0f0f; color: #f1f1f1; overflow-x: hidden; }
 .setup-actions { display: flex; justify-content: flex-end; margin-top: 14px; }
 
 .post-modal-card { max-width: 600px; }
+
+/* MOBİL & TABLET UYumluluk (Responsive Media Queries) */
+@media (max-width: 768px) {
+    .sidebar { width: 72px; padding: 8px 4px; }
+    .sidebar .nav-item span { display: none; }
+    .sidebar .nav-item { justify-content: center; gap: 0; padding: 12px; }
+    .content-container { padding: 16px 12px; }
+    .navbar { padding: 0 12px; }
+    .logo-area { width: 120px; }
+    .country-code { display: none; }
+    .user-area { width: auto; gap: 8px; }
+    .create-btn span, .signin-btn span { display: none; }
+    .create-btn, .signin-btn { padding: 8px; border-radius: 50%; }
+    .type-selection-grid { flex-direction: column; }
+}
