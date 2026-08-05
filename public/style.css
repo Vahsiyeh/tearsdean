@@ -82,7 +82,6 @@ body {
 .avatar-circle { width: 34px; height: 34px; border-radius: 50%; background-color: #a855f7; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; cursor: pointer; overflow: hidden; }
 .avatar-circle img { width: 100%; height: 100%; object-fit: cover; }
 
-/* YOUTUBE TARZI PROFİL DROPDOWN PANELİ */
 .profile-dropdown-menu {
     position: absolute;
     top: 48px;
@@ -154,7 +153,6 @@ body {
 .channel-header-banner h2 { font-size: 24px; font-weight: 700; color: #fff; }
 .channel-header-banner p { font-size: 14px; color: #aaa; margin-top: 4px; }
 
-/* YOUTUBE TARZI ŞIK DELETE BUTONU */
 .delete-video-btn {
     position: absolute;
     top: 8px;
@@ -178,10 +176,11 @@ body {
 .delete-video-btn:active { transform: scale(0.95); }
 .delete-icon { width: 16px; height: 16px; fill: #ff4e4e; }
 
+/* Video Oynatıcı Ekrana Sığma ve Alt Boşluk Ayarı */
 .watch-page-container { display: flex; max-width: 1280px; margin: 0 auto; padding-right: 24px; }
-.watch-main-column { flex: 1; display: flex; flex-direction: column; gap: 16px; }
-.watch-player-wrapper { width: 100%; aspect-ratio: 16 / 9; background-color: #000; border-radius: 12px; overflow: hidden; }
-.watch-video { width: 100%; height: 100%; object-fit: contain; }
+.watch-main-column { flex: 1; display: flex; flex-direction: column; gap: 16px; max-height: calc(100vh - 100px); }
+.watch-player-wrapper { width: 100%; max-height: 60vh; background-color: #000; border-radius: 12px; overflow: hidden; display: flex; justify-content: center; }
+.watch-video { width: 100%; max-height: 60vh; object-fit: contain; }
 .watch-video-title { font-size: 20px; font-weight: 700; color: #fff; }
 .watch-channel-row { display: flex; justify-content: space-between; align-items: center; }
 .watch-channel-info { display: flex; align-items: center; gap: 12px; }
@@ -192,7 +191,6 @@ body {
 .watch-desc-box { background-color: #272727; border-radius: 12px; padding: 12px 16px; font-size: 14px; color: #f1f1f1; display: flex; flex-direction: column; gap: 8px; }
 .watch-views-date { font-weight: 700; color: #fff; font-size: 13px; }
 
-/* SABİT SİDEBAR & SUBMENU */
 .sidebar {
     width: 235px;
     background-color: #0f0f0f;
