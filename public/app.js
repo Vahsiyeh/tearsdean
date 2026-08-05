@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const GOOGLE_CLIENT_ID = "736819800954-2jebad4dhpcg25m3ps69k2nssbf84d06.apps.googleusercontent.com";
+    const GOOGLE_CLIENT_ID = "736819800954-ufc0h3143np8u87ji87ctidcrq8pk0kc.apps.googleusercontent.com";
     const takenHandles = ['tearsdean', 'youtube', 'admin', 'roblox', 'developer', 'garda'];
 
     // --- ELEMENTLER ---
