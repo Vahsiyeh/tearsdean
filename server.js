@@ -189,4 +189,19 @@ app.post('/api/contents/:id/comment', (req, res) => {
     res.json({ success: true, comments: item.comments });
 });
 
+// Yorum silme endpoint'i
+app.delete('/api/contents/:id/comment/:commentId', (req, res) => {
+    const contentId = Number(req.params.id);
+    const commentId = Number(req.params.commentId);
+    let contents = getContents();
+    const item = contents.find(c => c.id === contentId);
+    if (!item) return res.status(404).json({ error: 'Bulunamadı' });
+
+    if (item.comments) {
+        item.comments = item.comments.filter(c => c.id !== commentId);
+        saveContents(contents);
+    }
+    res.json({ success: true, comments: item.comments });
+});
+
 app.listen(PORT, () => console.log(`Sunucu aktif: http://localhost:${PORT}`));
