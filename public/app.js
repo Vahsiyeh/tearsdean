@@ -562,10 +562,24 @@ document.addEventListener('DOMContentLoaded', () => {
             (comments || []).reverse().forEach(c => {
                 const div = document.createElement('div');
                 div.className = 'comment-item';
+                const canDelete = isLoggedIn && (c.authorEmail === currentEmail || (currentUserData && c.authorHandle === currentUserData.handle));
                 div.innerHTML = `
-                    <div class="yt-channel-avatar" style="background-color: ${c.authorBg};">${c.authorAvatar ? `<img src="${c.authorAvatar}">` : c.authorName.charAt(0)}</div>
-                    <div class="comment-content"><h5>@${c.authorHandle} • <span>${timeAgo(c.id)}</span></h5><p>${escapeHtml(c.text)}</p></div>
+                    <div class="comment-left">
+                        <div class="yt-channel-avatar" style="background-color: ${c.authorBg};">${c.authorAvatar ? `<img src="${c.authorAvatar}">` : c.authorName.charAt(0)}</div>
+                        <div class="comment-content"><h5>@${c.authorHandle} • <span>${timeAgo(c.id)}</span></h5><p>${escapeHtml(c.text)}</p></div>
+                    </div>
+                    ${canDelete ? `<button class="delete-comment-btn" data-comment-id="${c.id}"><svg viewBox="0 0 24 24" class="delete-comment-icon"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>` : ''}
                 `;
+                if (canDelete) {
+                    div.querySelector('.delete-comment-btn').addEventListener('click', async () => {
+                        const delRes = await fetch(`/api/contents/${item.id}/comment/${c.id}`, { method: 'DELETE' });
+                        const delData = await delRes.json();
+                        if (delData.success) {
+                            item.comments = delData.comments;
+                            renderModalComments(item.comments);
+                        }
+                    });
+                }
                 list.appendChild(div);
             });
         };
@@ -731,15 +745,32 @@ document.addEventListener('DOMContentLoaded', () => {
             const div = document.createElement('div');
             div.className = 'comment-item';
             const verifiedComm = shouldVerify(c.authorEmail, c.authorHandle) ? `<span class="verified-badge">✓</span>` : '';
+            const canDelete = isLoggedIn && (c.authorEmail === currentEmail || (currentUserData && c.authorHandle === currentUserData.handle));
+            
             div.innerHTML = `
-                <div class="yt-channel-avatar" style="background-color: ${c.authorBg || '#a855f7'};">${c.authorAvatar ? `<img src="${c.authorAvatar}">` : c.authorName.charAt(0)}</div>
-                <div class="comment-content">
-                    <div class="name-badge-inline">
-                        <h5>@${c.authorHandle}</h5>${verifiedComm}<span>• ${timeAgo(c.id)}</span>
+                <div class="comment-left">
+                    <div class="yt-channel-avatar" style="background-color: ${c.authorBg || '#a855f7'};">${c.authorAvatar ? `<img src="${c.authorAvatar}">` : c.authorName.charAt(0)}</div>
+                    <div class="comment-content">
+                        <div class="name-badge-inline">
+                            <h5>@${c.authorHandle}</h5>${verifiedComm}<span>• ${timeAgo(c.id)}</span>
+                        </div>
+                        <p>${escapeHtml(c.text)}</p>
                     </div>
-                    <p>${escapeHtml(c.text)}</p>
                 </div>
+                ${canDelete ? `<button class="delete-comment-btn" data-comment-id="${c.id}"><svg viewBox="0 0 24 24" class="delete-comment-icon"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>` : ''}
             `;
+
+            if (canDelete) {
+                div.querySelector('.delete-comment-btn').addEventListener('click', async () => {
+                    if (!activeCurrentVideoItem) return;
+                    const delRes = await fetch(`/api/contents/${activeCurrentVideoItem.id}/comment/${c.id}`, { method: 'DELETE' });
+                    const delData = await delRes.json();
+                    if (delData.success) {
+                        activeCurrentVideoItem.comments = delData.comments;
+                        renderComments(activeCurrentVideoItem.comments);
+                    }
+                });
+            }
             commentsList.appendChild(div);
         });
     }
@@ -907,6 +938,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // THUMBNAIL KESİN ÇÖZÜM (Siyah ekran kalmaması için kesin seek mekanizması)
     function generateAutoThumbnails(videoFile) {
         const videoUrl = URL.createObjectURL(videoFile);
         const tempVid = document.createElement('video');
@@ -917,34 +949,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
         tempVid.onloadedmetadata = function() {
             videoDurationSeconds = tempVid.duration;
+            tempVid.currentTime = Math.min(1.0, tempVid.duration * 0.1);
+        };
+
+        tempVid.onseeked = function() {
             const canvas = document.createElement('canvas');
             canvas.width = tempVid.videoWidth || 1280;
             canvas.height = tempVid.videoHeight || 720;
             const ctx = canvas.getContext('2d');
+            ctx.drawImage(tempVid, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL('image/jpeg');
 
-            const timeStamps = [tempVid.duration * 0.1, tempVid.duration * 0.4, tempVid.duration * 0.7];
-            autoThumbGrid.innerHTML = '';
-
-            timeStamps.forEach((t, idx) => {
-                tempVid.currentTime = Math.max(0.1, t);
-                tempVid.onseeked = function() {
-                    ctx.drawImage(tempVid, 0, 0, canvas.width, canvas.height);
-                    const dataUrl = canvas.toDataURL('image/jpeg');
-
-                    const thumbOption = document.createElement('div');
-                    thumbOption.className = 'auto-thumb-option' + (idx === 0 ? ' selected' : '');
-                    thumbOption.innerHTML = `<img src="${dataUrl}">`;
-
-                    if (idx === 0) chosenThumbnailUrl = dataUrl;
-
-                    thumbOption.addEventListener('click', () => {
-                        document.querySelectorAll('.auto-thumb-option').forEach(o => o.classList.remove('selected'));
-                        thumbOption.classList.add('selected');
-                        chosenThumbnailUrl = dataUrl;
-                    });
-                    autoThumbGrid.appendChild(thumbOption);
-                };
-            });
+            chosenThumbnailUrl = dataUrl;
+            autoThumbGrid.innerHTML = `
+                <div class="auto-thumb-option selected">
+                    <img src="${dataUrl}">
+                </div>
+            `;
         };
     }
 
