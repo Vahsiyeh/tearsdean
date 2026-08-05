@@ -2,81 +2,89 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const cors = require('cors');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
-// Middleware
-app.use(cors());
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, 'public')));
 
-// Uploads klasörü yoksa otomatik oluşturalım
+// Uploads klasörü
 const uploadDir = path.join(__dirname, 'public', 'uploads');
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Geçici Veritabanı (Başlangıç videosuyla)
-let videos = [
-    {
-        id: "1",
-        title: "Gardaşımla İlk Video! 😎🔥",
-        videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-        uploader: "Kral_Gardaş",
-        likes: 12,
-        views: 142
-    }
-];
-
-// Multer Ayarları (Video Dosyası Yüklemek İçin)
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, uploadDir);
     },
     filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + path.extname(file.originalname));
+        cb(null, Date.now() + '-' + file.originalname);
     }
 });
 
-const upload = multer({ storage: storage });
+const upload = multer({ storage });
 
-// API Endpoints
+// Tüm cihazların ortak göreceği global içerik dosyası (contents.json)
+const dbFile = path.join(__dirname, 'contents.json');
 
-// 1. Tüm videoları getir
-app.get('/api/videos', (req, res) => {
-    res.json(videos);
+function getContents() {
+    if (!fs.existsSync(dbFile)) return [];
+    try {
+        return JSON.parse(fs.readFileSync(dbFile, 'utf8'));
+    } catch {
+        return [];
+    }
+}
+
+function saveContents(contents) {
+    fs.writeFileSync(dbFile, JSON.stringify(contents, null, 2));
+}
+
+// Tüm dünyadan (Ankara, İstanbul vs.) atılan içerikleri ortak getir
+app.get('/api/contents', (req, res) => {
+    const contents = getContents();
+    res.json(contents);
 });
 
-// 2. Yeni video yükle
-app.post('/api/videos/upload', upload.single('video'), (req, res) => {
+// Yeni içerik yükle ve herkes için global yap
+app.post('/api/upload', upload.single('file'), (req, res) => {
     if (!req.file) {
-        return res.status(400).json({ error: 'Lütfen bir video dosyası seç la!' });
+        return res.status(400).json({ error: 'Dosya yüklenmedi' });
     }
 
-    const newVideo = {
-        id: String(videos.length + 1),
-        title: req.body.title || 'İsimsiz Video',
-        videoUrl: `/uploads/${req.file.filename}`,
-        uploader: req.body.uploader || 'Anonim Gardaş',
-        likes: 0,
-        views: 0
+    const newContent = {
+        id: Date.now(),
+        title: req.body.title || 'Untitled',
+        description: req.body.description || '',
+        type: req.body.type || 'video',
+        fileUrl: `/uploads/${req.file.filename}`,
+        thumbnailUrl: req.body.thumbnailUrl || `/uploads/${req.file.filename}`,
+        duration: req.body.duration || '0:30',
+        authorName: req.body.authorName || 'FreezyOfficial0',
+        authorHandle: req.body.authorHandle || 'freezyofficial',
+        authorAvatar: req.body.authorAvatar || '',
+        authorBg: req.body.authorBg || '#a855f7',
+        views: 1,
+        viewedUsers: [req.body.authorEmail || 'guest']
     };
 
-    videos.push(newVideo);
-    res.status(201).json({ message: 'Video başarıyla yüklendi gardaş!', video: newVideo });
+    const contents = getContents();
+    contents.push(newContent);
+    saveContents(contents);
+
+    res.json({ success: true, content: newContent });
 });
 
-// 3. Beğeni ekle
-app.post('/api/videos/:id/like', (req, res) => {
-    const video = videos.find(v => v.id === req.params.id);
-    if (video) {
-        video.likes += 1;
-        return res.json({ likes: video.likes });
-    }
-    res.status(404).json({ error: 'Video bulunamadı!' });
+// İçerik silme
+app.delete('/api/contents/:id', (req, res) => {
+    const id = Number(req.params.id);
+    let contents = getContents();
+    contents = contents.filter(c => c.id !== id);
+    saveContents(contents);
+    res.json({ success: true });
 });
 
 app.listen(PORT, () => {
