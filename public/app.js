@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const uploadText = document.getElementById('uploadText');
     const contentTitleInput = document.getElementById('contentTitle');
     const contentDescInput = document.getElementById('contentDesc');
+    const autoThumbGrid = document.getElementById('autoThumbGrid');
 
     const homeView = document.getElementById('homeView');
     const channelView = document.getElementById('channelView');
@@ -99,6 +100,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentStep = 1;
     let selectedType = 'video';
     let selectedFile = null;
+    let chosenThumbnailUrl = null;
+    let videoDurationSeconds = 0;
     let customAvatarUrl = null;
     let googleDefaultAvatar = null;
     let isLoggedIn = false;
@@ -106,6 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentEmail = null;
     let currentUserData = null;
     let activeCurrentVideoItem = null;
+    let currentViewingChannelHandle = null;
 
     const googleAvatarColors = ['#e53935', '#d81b60', '#8e24aa', '#5e35b1', '#3949ab', '#1e88e5', '#039be5', '#00acc1', '#00897b', '#43a047', '#fb8c00', '#f4511e'];
 
@@ -245,7 +249,53 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // FEED & GÖSTERİM
+    // ABONELİK KONTROLÜ
+    function isSubscribed(handle) {
+        const subs = JSON.parse(localStorage.getItem('yt_subs_' + (currentUserData ? currentUserData.handle : 'guest')) || '[]');
+        return subs.includes(handle);
+    }
+
+    function toggleSubscribe(handle) {
+        if (!isLoggedIn) {
+            authModal.classList.add('active');
+            return;
+        }
+        const key = 'yt_subs_' + currentUserData.handle;
+        let subs = JSON.parse(localStorage.getItem(key) || '[]');
+        const idx = subs.indexOf(handle);
+        if (idx > -1) {
+            subs.splice(idx, 1);
+            showToast("Unsubscribed");
+        } else {
+            subs.push(handle);
+            showToast("Subscribed!");
+        }
+        localStorage.setItem(key, JSON.stringify(subs));
+        updateSubscribeButtons(handle);
+    }
+
+    function updateSubscribeButtons(handle) {
+        const subbed = isSubscribed(handle);
+        [watchSubscribeBtn, subscribeMainBtn].forEach(btn => {
+            if (!btn) return;
+            if (subbed) {
+                btn.textContent = 'Subscribed';
+                btn.classList.add('subscribed');
+            } else {
+                btn.textContent = 'Subscribe';
+                btn.classList.remove('subscribed');
+            }
+        });
+    }
+
+    watchSubscribeBtn.addEventListener('click', () => {
+        if (activeCurrentVideoItem) toggleSubscribe(activeCurrentVideoItem.authorHandle);
+    });
+    subscribeMainBtn.addEventListener('click', () => {
+        if (currentViewingChannelHandle) toggleSubscribe(currentViewingChannelHandle);
+    });
+
+    // FEED YÜKLEME
     async function loadFeed(filterType = 'all', searchQuery = '') {
         triggerLoadingBar();
         homeView.style.display = 'block';
@@ -314,13 +364,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // KANAL SAYFASI AÇMA
     async function openChannelPageByHandle(handle) {
         triggerLoadingBar();
         homeView.style.display = 'none';
         watchView.style.display = 'none';
         channelView.style.display = 'block';
         if (mainVideoPlayer) mainVideoPlayer.pause();
+        currentViewingChannelHandle = handle;
 
         const res = await fetch('/api/contents');
         const allContents = await res.json();
@@ -337,6 +387,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 channelBigAvatar.textContent = ch.authorName.charAt(0).toUpperCase();
             }
         }
+        updateSubscribeButtons(handle);
 
         channelGrid.innerHTML = '';
         if (channelContents.length === 0) {
@@ -397,11 +448,11 @@ document.addEventListener('DOMContentLoaded', () => {
             watchAvatar.textContent = item.authorName.charAt(0).toUpperCase();
         }
 
+        updateSubscribeButtons(item.authorHandle);
         renderComments(item.comments || []);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // LİKE İŞLEMİ
     likeBtn.addEventListener('click', async () => {
         if (!isLoggedIn) {
             authModal.classList.add('active');
@@ -428,7 +479,6 @@ document.addEventListener('DOMContentLoaded', () => {
         showToast(repostBtn.classList.contains('active') ? "Reposted to your profile!" : "Repost removed.");
     });
 
-    // YORUM EKLEME
     commentSubmitBtn.addEventListener('click', async () => {
         if (!isLoggedIn) {
             authModal.classList.add('active');
@@ -618,13 +668,59 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     selectFileBtn.addEventListener('click', () => fileInput.click());
+    
     fileInput.addEventListener('change', (e) => {
         if (e.target.files.length > 0) {
             selectedFile = e.target.files[0];
             fileNameDisplay.textContent = selectedFile.name;
             fileInfoBox.style.display = 'block';
+            if (selectedType === 'video') generateAutoThumbnails(selectedFile);
         }
     });
+
+    function generateAutoThumbnails(videoFile) {
+        const videoUrl = URL.createObjectURL(videoFile);
+        const tempVid = document.createElement('video');
+        tempVid.src = videoUrl;
+        tempVid.crossOrigin = "anonymous";
+        tempVid.muted = true;
+        tempVid.preload = "auto";
+
+        tempVid.onloadedmetadata = function() {
+            videoDurationSeconds = tempVid.duration;
+            const canvas = document.createElement('canvas');
+            canvas.width = tempVid.videoWidth || 1280;
+            canvas.height = tempVid.videoHeight || 720;
+            const ctx = canvas.getContext('2d');
+
+            const timeStamps = [tempVid.duration * 0.1, tempVid.duration * 0.4, tempVid.duration * 0.7];
+            autoThumbGrid.innerHTML = '';
+            let count = 0;
+
+            timeStamps.forEach((t, idx) => {
+                tempVid.currentTime = Math.max(0.1, t);
+                tempVid.onseeked = function() {
+                    ctx.drawImage(tempVid, 0, 0, canvas.width, canvas.height);
+                    const dataUrl = canvas.toDataURL('image/jpeg');
+
+                    const thumbOption = document.createElement('div');
+                    thumbOption.className = 'auto-thumb-option' + (idx === 0 ? ' selected' : '');
+                    thumbOption.innerHTML = `<img src="${dataUrl}">`;
+
+                    if (idx === 0) chosenThumbnailUrl = dataUrl;
+
+                    thumbOption.addEventListener('click', () => {
+                        document.querySelectorAll('.auto-thumb-option').forEach(o => o.classList.remove('selected'));
+                        thumbOption.classList.add('selected');
+                        chosenThumbnailUrl = dataUrl;
+                    });
+
+                    autoThumbGrid.appendChild(thumbOption);
+                    count++;
+                };
+            });
+        };
+    }
 
     nextStepBtn.addEventListener('click', async () => {
         if (currentStep < 4) {
@@ -636,6 +732,8 @@ document.addEventListener('DOMContentLoaded', () => {
             formData.append('title', contentTitleInput.value.trim() || 'Untitled');
             formData.append('description', contentDescInput.value.trim());
             formData.append('type', selectedType);
+            formData.append('thumbnailUrl', chosenThumbnailUrl || '');
+            formData.append('duration', formatDuration(videoDurationSeconds));
             formData.append('authorName', currentUserData.name);
             formData.append('authorHandle', currentUserData.handle);
             formData.append('authorAvatar', currentUserData.avatarUrl || '');
@@ -671,10 +769,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function resetWizard() {
         currentStep = 1;
         selectedFile = null;
+        chosenThumbnailUrl = null;
+        videoDurationSeconds = 0;
         fileInput.value = '';
         fileInfoBox.style.display = 'none';
         contentTitleInput.value = '';
         contentDescInput.value = '';
+        autoThumbGrid.innerHTML = '';
         updateWizardState();
     }
 });
