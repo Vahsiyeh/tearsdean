@@ -2,7 +2,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const GOOGLE_CLIENT_ID = "736819800954-ufc0h3143np8u87ji87ctidcrq8pk0kc.apps.googleusercontent.com";
     const takenHandles = ['tearsdean', 'youtube', 'admin', 'roblox', 'developer', 'garda'];
 
-    // --- ELEMENTLER ---
     const createBtn = document.getElementById('createBtn');
     const createModal = document.getElementById('createModal');
     const closeModalBtn = document.getElementById('closeModalBtn');
@@ -66,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const authStepLogin = document.getElementById('authStepLogin');
     const authStepProfile = document.getElementById('authStepProfile');
     const googleAuthBtn = document.getElementById('googleAuthBtn');
-    const appleAuthBtn = document.getElementById('appleAuthBtn');
+    const closeAuthModalBtn = document.getElementById('closeAuthModalBtn');
 
     const avatarPreview = document.getElementById('avatarPreview');
     const customAvatarInput = document.getElementById('customAvatarInput');
@@ -109,14 +108,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return googleAvatarColors[Math.abs(hash) % googleAvatarColors.length];
     }
 
-    function loadTakenHandles() {
-        const savedChannels = JSON.parse(localStorage.getItem('yt_all_channels') || '{}');
-        Object.values(savedChannels).forEach(ch => {
-            if (ch.handle && !takenHandles.includes(ch.handle)) takenHandles.push(ch.handle);
-        });
-    }
-    loadTakenHandles();
-
     function triggerLoadingBar() {
         if (!topLoadingBar) return;
         topLoadingBar.style.width = '0%';
@@ -149,7 +140,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
     }
 
-    // Giriş yapılmış mı kontrol et (Ana sayfada zorunluluk yok, herkes gezebilir)
     function checkSavedSession() {
         const activeEmail = localStorage.getItem('yt_active_email');
         const allChannels = JSON.parse(localStorage.getItem('yt_all_channels') || '{}');
@@ -195,89 +185,94 @@ document.addEventListener('DOMContentLoaded', () => {
         myAccountArrow.classList.toggle('rotated', !isOpen);
     });
 
-    // FEED & HOME / POSTS AYRIMI
-    function loadFeed(filterType = 'all', searchQuery = '') {
+    // SUNUCUDAN ORTAK İÇERİKLERİ ÇEK (Ankara, İstanbul vb. her yerden ortak görünür)
+    async function loadFeed(filterType = 'all', searchQuery = '') {
         triggerLoadingBar();
         homeView.style.display = 'block';
         channelView.style.display = 'none';
         watchView.style.display = 'none';
         if (mainVideoPlayer) mainVideoPlayer.pause();
 
-        const allContents = JSON.parse(localStorage.getItem('yt_contents') || '[]');
-        feedGrid.innerHTML = '';
+        try {
+            const res = await fetch('/api/contents');
+            const allContents = await res.json();
+            feedGrid.innerHTML = '';
 
-        let filtered = allContents;
-        if (filterType === 'posts') {
-            filtered = allContents.filter(c => c.type === 'post');
-        } else if (filterType === 'videos') {
-            filtered = allContents.filter(c => c.type === 'video');
-        }
-
-        if (searchQuery.trim() !== '') {
-            const q = searchQuery.toLowerCase().trim();
-            filtered = filtered.filter(item => 
-                (item.title && item.title.toLowerCase().includes(q)) || 
-                (item.authorName && item.authorName.toLowerCase().includes(q))
-            );
-        }
-
-        if (filtered.length === 0) {
-            emptyFeed.style.display = 'block';
-            return;
-        }
-
-        emptyFeed.style.display = 'none';
-
-        filtered.reverse().forEach(item => {
-            const card = document.createElement('div');
-            card.className = 'yt-video-card';
-
-            let mediaHTML = '';
-            if (item.type === 'video') {
-                const coverImage = item.thumbnailUrl || item.fileUrl; 
-                mediaHTML = `
-                    <div class="yt-thumbnail-wrapper">
-                        <img src="${coverImage}" alt="Thumbnail" class="yt-thumbnail-img">
-                        <span class="video-duration-badge">${item.duration || '0:00'}</span>
-                    </div>
-                `;
-            } else {
-                mediaHTML = `
-                    <div class="yt-thumbnail-wrapper">
-                        <img src="${item.fileUrl}" alt="Post Image" class="yt-post-image">
-                    </div>
-                `;
+            let filtered = allContents;
+            if (filterType === 'posts') {
+                filtered = allContents.filter(c => c.type === 'post');
+            } else if (filterType === 'videos') {
+                filtered = allContents.filter(c => c.type === 'video');
             }
 
-            const avatarHTML = item.authorAvatar 
-                ? `<img src="${item.authorAvatar}">` 
-                : item.authorName.charAt(0).toUpperCase();
+            if (searchQuery.trim() !== '') {
+                const q = searchQuery.toLowerCase().trim();
+                filtered = filtered.filter(item => 
+                    (item.title && item.title.toLowerCase().includes(q)) || 
+                    (item.authorName && item.authorName.toLowerCase().includes(q))
+                );
+            }
 
-            const uniqueViewsCount = item.viewedUsers ? item.viewedUsers.length : (item.views || 1);
+            if (filtered.length === 0) {
+                emptyFeed.style.display = 'block';
+                return;
+            }
 
-            card.innerHTML = `
-                ${mediaHTML}
-                <div class="yt-video-details">
-                    <div class="yt-channel-avatar" style="background-color: ${item.authorBg || '#a855f7'};">
-                        ${avatarHTML}
+            emptyFeed.style.display = 'none';
+
+            filtered.reverse().forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'yt-video-card';
+
+                let mediaHTML = '';
+                if (item.type === 'video') {
+                    const coverImage = item.thumbnailUrl || item.fileUrl; 
+                    mediaHTML = `
+                        <div class="yt-thumbnail-wrapper">
+                            <img src="${coverImage}" alt="Thumbnail" class="yt-thumbnail-img">
+                            <span class="video-duration-badge">${item.duration || '0:00'}</span>
+                        </div>
+                    `;
+                } else {
+                    mediaHTML = `
+                        <div class="yt-thumbnail-wrapper">
+                            <img src="${item.fileUrl}" alt="Post Image" class="yt-post-image">
+                        </div>
+                    `;
+                }
+
+                const avatarHTML = item.authorAvatar 
+                    ? `<img src="${item.authorAvatar}">` 
+                    : item.authorName.charAt(0).toUpperCase();
+
+                const uniqueViewsCount = item.viewedUsers ? item.viewedUsers.length : (item.views || 1);
+
+                card.innerHTML = `
+                    ${mediaHTML}
+                    <div class="yt-video-details">
+                        <div class="yt-channel-avatar" style="background-color: ${item.authorBg || '#a855f7'};">
+                            ${avatarHTML}
+                        </div>
+                        <div class="yt-meta-info">
+                            <h4 class="yt-video-title">${escapeHtml(item.title)}</h4>
+                            <span class="yt-channel-name">${escapeHtml(item.authorName)}</span>
+                            <span class="yt-video-stats">${uniqueViewsCount} views • ${timeAgo(item.id)}</span>
+                        </div>
                     </div>
-                    <div class="yt-meta-info">
-                        <h4 class="yt-video-title">${escapeHtml(item.title)}</h4>
-                        <span class="yt-channel-name">${escapeHtml(item.authorName)}</span>
-                        <span class="yt-video-stats">${uniqueViewsCount} views • ${timeAgo(item.id)}</span>
-                    </div>
-                </div>
-            `;
+                `;
 
-            card.addEventListener('click', () => {
-                if (item.type === 'video') openWatchPage(item);
+                card.addEventListener('click', () => {
+                    if (item.type === 'video') openWatchPage(item);
+                });
+
+                feedGrid.appendChild(card);
             });
-
-            feedGrid.appendChild(card);
-        });
+        } catch (err) {
+            console.error("Feed yüklenemedi:", err);
+        }
     }
 
-    function loadChannelPage() {
+    async function loadChannelPage() {
         if (!isLoggedIn || !currentUserData) {
             authStepLogin.style.display = 'block';
             authStepProfile.style.display = 'none';
@@ -290,68 +285,75 @@ document.addEventListener('DOMContentLoaded', () => {
         channelView.style.display = 'block';
         if (mainVideoPlayer) mainVideoPlayer.pause();
 
-        const allContents = JSON.parse(localStorage.getItem('yt_contents') || '[]');
-        const myContents = allContents.filter(c => c.authorHandle === currentUserData.handle);
-        channelGrid.innerHTML = '';
+        try {
+            const res = await fetch('/api/contents');
+            const allContents = await res.json();
+            const myContents = allContents.filter(c => c.authorHandle === currentUserData.handle);
+            channelGrid.innerHTML = '';
 
-        if (myContents.length === 0) {
-            emptyChannelFeed.style.display = 'block';
-            return;
+            if (myContents.length === 0) {
+                emptyChannelFeed.style.display = 'block';
+                return;
+            }
+
+            emptyChannelFeed.style.display = 'none';
+
+            myContents.reverse().forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'yt-video-card';
+
+                const coverImage = item.thumbnailUrl || item.fileUrl;
+                let mediaHTML = `
+                    <div class="yt-thumbnail-wrapper">
+                        <img src="${coverImage}" alt="Thumbnail" class="yt-thumbnail-img">
+                        <span class="video-duration-badge">${item.duration || '0:00'}</span>
+                        <button class="delete-video-btn" data-id="${item.id}" title="Delete video">
+                            <svg viewBox="0 0 24 24" class="delete-icon"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                            <span>Delete</span>
+                        </button>
+                    </div>
+                `;
+
+                card.innerHTML = `
+                    ${mediaHTML}
+                    <div class="yt-video-details">
+                        <div class="yt-channel-avatar" style="background-color: ${currentUserData.bgColor || '#a855f7'};">
+                            ${currentUserData.avatarUrl ? `<img src="${currentUserData.avatarUrl}">` : currentUserData.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div class="yt-meta-info">
+                            <h4 class="yt-video-title">${escapeHtml(item.title)}</h4>
+                            <span class="yt-channel-name">${escapeHtml(currentUserData.name)}</span>
+                            <span class="yt-video-stats">${item.viewedUsers ? item.viewedUsers.length : 1} views • ${timeAgo(item.id)}</span>
+                        </div>
+                    </div>
+                `;
+
+                const deleteBtn = card.querySelector('.delete-video-btn');
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (confirm('Are you sure you want to delete this content?')) {
+                        deleteContent(item.id);
+                    }
+                });
+
+                card.addEventListener('click', () => {
+                    if (item.type === 'video') openWatchPage(item);
+                });
+
+                channelGrid.appendChild(card);
+            });
+        } catch (err) {
+            console.error("Kanal yüklenemedi:", err);
         }
-
-        emptyChannelFeed.style.display = 'none';
-
-        myContents.reverse().forEach(item => {
-            const card = document.createElement('div');
-            card.className = 'yt-video-card';
-
-            const coverImage = item.thumbnailUrl || item.fileUrl;
-            let mediaHTML = `
-                <div class="yt-thumbnail-wrapper">
-                    <img src="${coverImage}" alt="Thumbnail" class="yt-thumbnail-img">
-                    <span class="video-duration-badge">${item.duration || '0:00'}</span>
-                    <button class="delete-video-btn" data-id="${item.id}" title="Delete video">
-                        <svg viewBox="0 0 24 24" class="delete-icon"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                        <span>Delete</span>
-                    </button>
-                </div>
-            `;
-
-            card.innerHTML = `
-                ${mediaHTML}
-                <div class="yt-video-details">
-                    <div class="yt-channel-avatar" style="background-color: ${currentUserData.bgColor || '#a855f7'};">
-                        ${currentUserData.avatarUrl ? `<img src="${currentUserData.avatarUrl}">` : currentUserData.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div class="yt-meta-info">
-                        <h4 class="yt-video-title">${escapeHtml(item.title)}</h4>
-                        <span class="yt-channel-name">${escapeHtml(currentUserData.name)}</span>
-                        <span class="yt-video-stats">${item.viewedUsers ? item.viewedUsers.length : 1} views • ${timeAgo(item.id)}</span>
-                    </div>
-                </div>
-            `;
-
-            const deleteBtn = card.querySelector('.delete-video-btn');
-            deleteBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                if (confirm('Are you sure you want to delete this content?')) {
-                    deleteContent(item.id);
-                }
-            });
-
-            card.addEventListener('click', () => {
-                if (item.type === 'video') openWatchPage(item);
-            });
-
-            channelGrid.appendChild(card);
-        });
     }
 
-    function deleteContent(id) {
-        let allContents = JSON.parse(localStorage.getItem('yt_contents') || '[]');
-        allContents = allContents.filter(c => c.id !== id);
-        localStorage.setItem('yt_contents', JSON.stringify(allContents));
-        loadChannelPage();
+    async function deleteContent(id) {
+        try {
+            await fetch(`/api/contents/${id}`, { method: 'DELETE' });
+            loadChannelPage();
+        } catch (err) {
+            console.error("Silme hatası:", err);
+        }
     }
 
     searchSubmitBtn.addEventListener('click', () => {
@@ -370,23 +372,11 @@ document.addEventListener('DOMContentLoaded', () => {
         channelView.style.display = 'none';
         watchView.style.display = 'flex';
 
-        const viewerId = currentEmail || 'guest';
-        if (!item.viewedUsers) item.viewedUsers = [];
-
-        if (!item.viewedUsers.includes(viewerId)) {
-            item.viewedUsers.push(viewerId);
-            item.views = item.viewedUsers.length;
-
-            let allContents = JSON.parse(localStorage.getItem('yt_contents') || '[]');
-            allContents = allContents.map(c => c.id === item.id ? item : c);
-            localStorage.setItem('yt_contents', JSON.stringify(allContents));
-        }
-
         mainVideoPlayer.src = item.fileUrl;
         watchTitle.textContent = item.title;
         watchChannelName.textContent = item.authorName;
         watchHandle.textContent = `@${item.authorHandle}`;
-        watchViewsDate.textContent = `${item.viewedUsers.length} views • Uploaded ${timeAgo(item.id)}`;
+        watchViewsDate.textContent = `${item.viewedUsers ? item.viewedUsers.length : 1} views • Uploaded ${timeAgo(item.id)}`;
         watchDesc.textContent = item.description || 'No description provided.';
 
         if (item.authorAvatar) {
@@ -438,10 +428,6 @@ document.addEventListener('DOMContentLoaded', () => {
     googleAuthBtn.addEventListener('click', () => {
         if (tokenClient) tokenClient.requestAccessToken({ prompt: 'select_account' });
         else processGoogleLoginFlow("google_user@gmail.com", "Google User", null);
-    });
-
-    appleAuthBtn.addEventListener('click', () => {
-        processGoogleLoginFlow("apple_user@icloud.com", "Apple Device User", null);
     });
 
     function processGoogleLoginFlow(email, defaultName, defaultAvatar) {
@@ -592,7 +578,6 @@ document.addEventListener('DOMContentLoaded', () => {
         authModal.classList.add('active');
     });
 
-    closeAuthModalBtn = document.getElementById('closeAuthModalBtn');
     if (closeAuthModalBtn) {
         closeAuthModalBtn.addEventListener('click', () => authModal.classList.remove('active'));
     }
@@ -776,52 +761,51 @@ document.addEventListener('DOMContentLoaded', () => {
         validateCurrentStep();
     });
 
-    nextStepBtn.addEventListener('click', () => {
+    // SUNUCUYA FORM VERİSİ OLARAK GÖNDERME (Global Feed için)
+    nextStepBtn.addEventListener('click', async () => {
         if (!validateCurrentStep(true)) return;
 
         if (currentStep < 4) {
             currentStep++;
             updateWizardState();
         } else {
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                const fileBase64 = evt.target.result;
-                const durationStr = formatDuration(videoDurationSeconds);
-                processVideoAndSave(fileBase64, chosenThumbnailUrl, durationStr);
-            };
-            if (selectedFile) {
-                reader.readAsDataURL(selectedFile);
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('title', contentTitleInput.value.trim());
+            formData.append('description', contentDescInput.value.trim());
+            formData.append('type', selectedType);
+            formData.append('duration', formatDuration(videoDurationSeconds));
+            formData.append('authorName', currentUserData.name);
+            formData.append('authorHandle', currentUserData.handle);
+            formData.append('authorAvatar', currentUserData.avatarUrl || '');
+            formData.append('authorBg', currentUserData.bgColor);
+            formData.append('authorEmail', currentEmail);
+
+            nextStepBtn.textContent = 'Publishing...';
+            nextStepBtn.disabled = true;
+
+            try {
+                const res = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (res.ok) {
+                    createModal.classList.remove('active');
+                    searchInput.value = '';
+                    loadFeed('all');
+                    alert('Content successfully published globally!');
+                } else {
+                    alert('Upload failed la!');
+                }
+            } catch (err) {
+                console.error("Upload error:", err);
+            } finally {
+                nextStepBtn.textContent = 'Publish';
+                nextStepBtn.disabled = false;
             }
         }
     });
-
-    function processVideoAndSave(fileUrl, thumbUrl, durationStr = "0:30") {
-        const creatorId = currentEmail || 'guest';
-        const newContent = {
-            id: Date.now(),
-            type: selectedType,
-            fileUrl: fileUrl,
-            thumbnailUrl: thumbUrl,
-            duration: durationStr,
-            title: contentTitleInput.value.trim(),
-            description: contentDescInput.value.trim(),
-            views: 1,
-            viewedUsers: [creatorId],
-            authorName: currentUserData.name,
-            authorHandle: currentUserData.handle,
-            authorAvatar: currentUserData.avatarUrl,
-            authorBg: currentUserData.bgColor
-        };
-
-        let allContents = JSON.parse(localStorage.getItem('yt_contents') || '[]');
-        allContents.push(newContent);
-        localStorage.setItem('yt_contents', JSON.stringify(allContents));
-
-        createModal.classList.remove('active');
-        searchInput.value = '';
-        loadFeed('all');
-        alert('Content successfully published to feed!');
-    }
 
     prevStepBtn.addEventListener('click', () => {
         if (currentStep > 1) {
