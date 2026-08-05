@@ -52,7 +52,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchSubmitBtn = document.getElementById('searchSubmitBtn');
     const topLoadingBar = document.getElementById('topLoadingBar');
 
+    // Özel Player Elementleri
     const mainVideoPlayer = document.getElementById('mainVideoPlayer');
+    const videoContainer = document.getElementById('videoContainer');
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    const playIcon = document.getElementById('playIcon');
+    const pauseIcon = document.getElementById('pauseIcon');
+    const muteBtn = document.getElementById('muteBtn');
+    const volumeIcon = document.getElementById('volumeIcon');
+    const muteIcon = document.getElementById('muteIcon');
+    const volumeSlider = document.getElementById('volumeSlider');
+    const timeDisplay = document.getElementById('timeDisplay');
+    const progressBarContainer = document.getElementById('progressBarContainer');
+    const progressBarPlayed = document.getElementById('progressBarPlayed');
+    const progressBarHandle = document.getElementById('progressBarHandle');
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+
+    // Like, Dislike, Repost Elementleri
+    const likeBtn = document.getElementById('likeBtn');
+    const dislikeBtn = document.getElementById('dislikeBtn');
+    const repostBtn = document.getElementById('repostBtn');
+    const likeCountSpan = document.getElementById('likeCount');
+
     const watchTitle = document.getElementById('watchTitle');
     const watchAvatar = document.getElementById('watchAvatar');
     const watchChannelName = document.getElementById('watchChannelName');
@@ -99,6 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let tokenClient = null;
     let currentEmail = null;
     let currentUserData = null;
+    let activeCurrentVideoItem = null;
 
     const googleAvatarColors = ['#e53935', '#d81b60', '#8e24aa', '#5e35b1', '#3949ab', '#1e88e5', '#039be5', '#00acc1', '#00897b', '#43a047', '#fb8c00', '#f4511e'];
 
@@ -185,7 +207,99 @@ document.addEventListener('DOMContentLoaded', () => {
         myAccountArrow.classList.toggle('rotated', !isOpen);
     });
 
-    // SUNUCUDAN ORTAK İÇERİKLERİ ÇEK (Ankara, İstanbul vb. her yerden ortak görünür)
+    // ÖZEL YOUTUBE PLAYER KONTROL MANTIĞI
+    function togglePlayPause() {
+        if (mainVideoPlayer.paused) {
+            mainVideoPlayer.play();
+            playIcon.style.display = 'none';
+            pauseIcon.style.display = 'block';
+        } else {
+            mainVideoPlayer.pause();
+            playIcon.style.display = 'block';
+            pauseIcon.style.display = 'none';
+        }
+    }
+
+    playPauseBtn.addEventListener('click', togglePlayPause);
+    mainVideoPlayer.addEventListener('click', togglePlayPause);
+
+    mainVideoPlayer.addEventListener('timeupdate', () => {
+        if (!mainVideoPlayer.duration) return;
+        const current = mainVideoPlayer.currentTime;
+        const duration = mainVideoPlayer.duration;
+        const percent = (current / duration) * 100;
+        progressBarPlayed.style.width = `${percent}%`;
+        progressBarHandle.style.left = `${percent}%`;
+        timeDisplay.textContent = `${formatDuration(current)} / ${formatDuration(duration)}`;
+    });
+
+    progressBarContainer.addEventListener('click', (e) => {
+        const rect = progressBarContainer.getBoundingClientRect();
+        const pos = (e.clientX - rect.left) / rect.width;
+        mainVideoPlayer.currentTime = pos * mainVideoPlayer.duration;
+    });
+
+    muteBtn.addEventListener('click', () => {
+        mainVideoPlayer.muted = !mainVideoPlayer.muted;
+        if (mainVideoPlayer.muted) {
+            volumeIcon.style.display = 'none';
+            muteIcon.style.display = 'block';
+        } else {
+            volumeIcon.style.display = 'block';
+            muteIcon.style.display = 'none';
+        }
+    });
+
+    volumeSlider.addEventListener('input', (e) => {
+        mainVideoPlayer.volume = e.target.value;
+        mainVideoPlayer.muted = e.target.value == 0;
+        if (mainVideoPlayer.muted) {
+            volumeIcon.style.display = 'none';
+            muteIcon.style.display = 'block';
+        } else {
+            volumeIcon.style.display = 'block';
+            muteIcon.style.display = 'none';
+        }
+    });
+
+    fullscreenBtn.addEventListener('click', () => {
+        if (!document.fullscreenElement) {
+            videoContainer.requestFullscreen().catch(err => alert(err.message));
+        } else {
+            document.exitFullscreen();
+        }
+    });
+
+    // LIKE, DISLIKE & REPOST İŞLEMLERİ
+    likeBtn.addEventListener('click', () => {
+        likeBtn.classList.toggle('active');
+        dislikeBtn.classList.remove('active');
+        if (activeCurrentVideoItem) {
+            if (!activeCurrentVideoItem.likes) activeCurrentVideoItem.likes = 12000;
+            if (likeBtn.classList.contains('active')) activeCurrentVideoItem.likes++;
+            else activeCurrentVideoItem.likes--;
+            likeCountSpan.textContent = activeCurrentVideoItem.likes;
+        }
+    });
+
+    dislikeBtn.addEventListener('click', () => {
+        dislikeBtn.classList.toggle('active');
+        likeBtn.classList.remove('active');
+        if (likeBtn.classList.contains('active') && activeCurrentVideoItem) {
+            activeCurrentVideoItem.likes--;
+            likeCountSpan.textContent = activeCurrentVideoItem.likes;
+        }
+    });
+
+    repostBtn.addEventListener('click', () => {
+        repostBtn.classList.toggle('active');
+        if (repostBtn.classList.contains('active')) {
+            alert('Content successfully reposted to your profile!');
+        } else {
+            alert('Repost removed.');
+        }
+    });
+
     async function loadFeed(filterType = 'all', searchQuery = '') {
         triggerLoadingBar();
         homeView.style.display = 'block';
@@ -371,13 +485,23 @@ document.addEventListener('DOMContentLoaded', () => {
         homeView.style.display = 'none';
         channelView.style.display = 'none';
         watchView.style.display = 'flex';
+        activeCurrentVideoItem = item;
 
         mainVideoPlayer.src = item.fileUrl;
+        mainVideoPlayer.play();
+        playIcon.style.display = 'none';
+        pauseIcon.style.display = 'block';
+
         watchTitle.textContent = item.title;
         watchChannelName.textContent = item.authorName;
         watchHandle.textContent = `@${item.authorHandle}`;
         watchViewsDate.textContent = `${item.viewedUsers ? item.viewedUsers.length : 1} views • Uploaded ${timeAgo(item.id)}`;
         watchDesc.textContent = item.description || 'No description provided.';
+        likeCountSpan.textContent = item.likes || 12000;
+
+        likeBtn.classList.remove('active');
+        dislikeBtn.classList.remove('active');
+        repostBtn.classList.remove('active');
 
         if (item.authorAvatar) {
             watchAvatar.innerHTML = `<img src="${item.authorAvatar}">`;
@@ -761,7 +885,6 @@ document.addEventListener('DOMContentLoaded', () => {
         validateCurrentStep();
     });
 
-    // SUNUCUYA FORM VERİSİ OLARAK GÖNDERME (Global Feed için)
     nextStepBtn.addEventListener('click', async () => {
         if (!validateCurrentStep(true)) return;
 
