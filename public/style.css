@@ -1,6 +1,13 @@
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Roboto', Arial, sans-serif; }
 body { background-color: #0f0f0f; color: #f1f1f1; overflow-x: hidden; }
 
+/* ÖZEL YOUTUBE KAYDIRMA ÇUBUĞU (Scrollbar) */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #0f0f0f; }
+::-webkit-scrollbar-thumb { background: #555; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #888; }
+* { scrollbar-width: thin; scrollbar-color: #555 #0f0f0f; }
+
 .top-loading-bar { position: fixed; top: 0; left: 0; height: 3px; background-color: #3ea6ff; width: 0%; z-index: 9999; transition: width 0.3s ease; }
 
 .navbar { display: flex; justify-content: space-between; align-items: center; padding: 0 24px; height: 56px; background-color: #0f0f0f; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid rgba(255,255,255,0.08); }
@@ -50,16 +57,16 @@ body { background-color: #0f0f0f; color: #f1f1f1; overflow-x: hidden; }
 .main-layout { display: flex; min-height: calc(100vh - 56px); }
 .content-container { flex: 1; padding: 32px 40px; overflow-y: auto; background-color: #0f0f0f; }
 
-.feed-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 32px 20px; }
+/* PC'de ekrana 3 video sığacak şekilde grid yapısı */
+.feed-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px 24px; max-width: 1400px; margin: 0 auto; }
 .empty-feed { text-align: center; margin-top: 80px; color: #777; }
 .empty-feed h3 { font-size: 20px; color: #aaa; margin-bottom: 8px; }
 
 .verified-badge { display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; background-color: #3ea6ff; color: #0f0f0f; border-radius: 50%; font-size: 10px; font-weight: bold; margin-left: 5px; vertical-align: middle; }
 .name-badge-inline { display: flex; align-items: center; }
 
-/* Video Kartları (Hover Efekti ile) */
-.yt-video-card { display: flex; flex-direction: column; cursor: pointer; gap: 12px; transition: transform 0.2s ease; }
-.yt-video-card:hover { transform: translateY(-4px); }
+/* VİDEO KARTLARI (Hover efekti tamamen kaldırıldı) */
+.yt-video-card { display: flex; flex-direction: column; cursor: pointer; gap: 12px; }
 .yt-thumbnail-wrapper { width: 100%; aspect-ratio: 16 / 9; background-color: #1f1f1f; border-radius: 16px; overflow: hidden; position: relative; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
 .yt-thumbnail-img { width: 100%; height: 100%; object-fit: cover; }
 .video-duration-badge { position: absolute; bottom: 8px; right: 8px; background-color: rgba(0,0,0,0.85); color: #fff; font-size: 12px; padding: 3px 6px; border-radius: 4px; font-weight: 500; }
@@ -106,7 +113,7 @@ body { background-color: #0f0f0f; color: #f1f1f1; overflow-x: hidden; }
 .subscribe-main-btn.subscribed, .subscribe-btn.subscribed { background-color: #272727; color: #f1f1f1; }
 .subscribe-main-btn.subscribed:hover, .subscribe-btn.subscribed:hover { background-color: #3f3f3f; }
 
-/* Özel Video Oynatıcı */
+/* YOUTUBE ORİJİNAL OYNATICI KONTROLLERİ */
 .watch-page-container { display: flex; max-width: 1280px; margin: 0 auto; flex-direction: column; }
 .watch-main-column { display: flex; flex-direction: column; gap: 16px; }
 
@@ -116,20 +123,20 @@ body { background-color: #0f0f0f; color: #f1f1f1; overflow-x: hidden; }
 .yt-player-controls { position: absolute; bottom: 0; left: 0; width: 100%; background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 100%); display: flex; flex-direction: column; padding: 0 16px 12px 16px; opacity: 0; transition: opacity 0.25s ease; z-index: 20; }
 .custom-video-container:hover .yt-player-controls { opacity: 1; }
 
-.progress-bar-container { position: relative; width: 100%; height: 6px; background-color: rgba(255,255,255,0.25); cursor: pointer; margin-bottom: 10px; border-radius: 3px; }
-.progress-bar-container:hover { height: 9px; }
+.progress-bar-container { position: relative; width: 100%; height: 5px; background-color: rgba(255,255,255,0.25); cursor: pointer; margin-bottom: 10px; border-radius: 3px; }
+.progress-bar-container:hover { height: 7px; }
 .progress-bar-played { position: absolute; top: 0; left: 0; height: 100%; background-color: #ff0000; border-radius: 3px; width: 0%; }
-.progress-bar-handle { position: absolute; top: 50%; left: 0%; transform: translate(-50%, -50%); width: 14px; height: 14px; background-color: #ff0000; border-radius: 50%; opacity: 0; }
+.progress-bar-handle { position: absolute; top: 50%; left: 0%; transform: translate(-50%, -50%); width: 13px; height: 13px; background-color: #ff0000; border-radius: 50%; opacity: 0; }
 .progress-bar-container:hover .progress-bar-handle { opacity: 1; }
 
 .ctrl-row { display: flex; justify-content: space-between; align-items: center; width: 100%; }
-.controls-left, .controls-right { display: flex; align-items: center; gap: 14px; }
+.controls-left, .controls-right { display: flex; align-items: center; gap: 12px; }
 
 .ctrl-btn { background: none; border: none; color: #fff; cursor: pointer; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; transition: transform 0.1s ease; }
 .ctrl-btn:hover { transform: scale(1.1); }
 .ctrl-btn svg { width: 22px; height: 22px; fill: #fff; }
 
-.volume-slider { width: 80px; accent-color: #fff; cursor: pointer; height: 4px; }
+.volume-slider { width: 70px; accent-color: #fff; cursor: pointer; height: 4px; }
 .time-display { color: #fff; font-size: 13px; user-select: none; }
 
 .watch-video-title { font-size: 22px; font-weight: 700; color: #fff; }
@@ -155,7 +162,7 @@ body { background-color: #0f0f0f; color: #f1f1f1; overflow-x: hidden; }
 .watch-desc-box { background-color: #1a1a1a; border-radius: 12px; padding: 14px 18px; font-size: 14px; color: #f1f1f1; display: flex; flex-direction: column; gap: 8px; border: 1px solid #2a2a2a; }
 .watch-views-date { font-weight: 700; color: #fff; font-size: 13px; }
 
-/* Yorumlar Bölümü */
+/* Yorumlar ve Yorum Silme Butonu */
 .comments-section { margin-top: 24px; display: flex; flex-direction: column; gap: 16px; }
 .comments-section h3 { font-size: 18px; color: #fff; }
 .add-comment-box { display: flex; align-items: center; gap: 16px; }
@@ -168,10 +175,14 @@ body { background-color: #0f0f0f; color: #f1f1f1; overflow-x: hidden; }
 .comment-submit-btn:active { transform: scale(0.95); }
 
 .comments-list { display: flex; flex-direction: column; gap: 16px; margin-top: 12px; }
-.comment-item { display: flex; gap: 12px; }
+.comment-item { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.comment-left { display: flex; gap: 12px; flex: 1; }
 .comment-content h5 { font-size: 13px; color: #fff; margin-bottom: 4px; display: flex; align-items: center; }
 .comment-content h5 span { color: #aaa; font-weight: 400; margin-left: 6px; }
 .comment-content p { font-size: 14px; color: #f1f1f1; }
+.delete-comment-btn { background: none; border: none; color: #aaa; cursor: pointer; padding: 4px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: color 0.15s, background-color 0.15s; }
+.delete-comment-btn:hover { color: #ff4444; background-color: rgba(255,68,68,0.1); }
+.delete-comment-icon { width: 16px; height: 16px; fill: currentColor; }
 
 .sidebar { width: 240px; background-color: #0f0f0f; padding: 12px 12px 12px 16px; display: flex; flex-direction: column; border-right: 1px solid rgba(255,255,255,0.08); position: sticky; top: 56px; height: calc(100vh - 56px); overflow-y: auto; flex-shrink: 0; }
 .nav-group { list-style: none; display: flex; flex-direction: column; gap: 4px; }
@@ -186,7 +197,7 @@ body { background-color: #0f0f0f; color: #f1f1f1; overflow-x: hidden; }
 .nav-item.active .icon-outline { display: none !important; }
 .nav-divider { border: 0; height: 1px; background-color: #222; margin: 12px 0; }
 
-/* MODAL & RESPONSIVE DÜZENLEMELERİ (Ekrana Sığma ve Taşma Önleme) */
+/* MODAL */
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0,0,0,0.8); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.2s; padding: 16px; }
 .modal-overlay.active { opacity: 1; visibility: visible; }
 .modal-card { background-color: #1f1f1f; border: 1px solid #333; width: 100%; max-width: 680px; max-height: 85vh; border-radius: 20px; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.9); overflow: hidden; }
@@ -262,7 +273,10 @@ body { background-color: #0f0f0f; color: #f1f1f1; overflow-x: hidden; }
 
 .post-modal-card { max-width: 600px; }
 
-/* MOBİL & TABLET UYumluluk (Responsive Media Queries) */
+/* MOBİL & TABLET UYUMU */
+@media (max-width: 1024px) {
+    .feed-grid { grid-template-columns: repeat(2, 1fr); }
+}
 @media (max-width: 768px) {
     .sidebar { width: 72px; padding: 8px 4px; }
     .sidebar .nav-item span { display: none; }
@@ -275,4 +289,5 @@ body { background-color: #0f0f0f; color: #f1f1f1; overflow-x: hidden; }
     .create-btn span, .signin-btn span { display: none; }
     .create-btn, .signin-btn { padding: 8px; border-radius: 50%; }
     .type-selection-grid { flex-direction: column; }
+    .feed-grid { grid-template-columns: 1fr; }
 }
