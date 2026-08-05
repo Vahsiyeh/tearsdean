@@ -14,6 +14,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const selectFileBtn = document.getElementById('selectFileBtn');
     const fileNameDisplay = document.getElementById('fileName');
     const fileInfoBox = document.getElementById('fileInfo');
+
+    const postImageInput = document.getElementById('postImageInput');
+    const selectPostFileBtn = document.getElementById('selectPostFileBtn');
+    const postFileName = document.getElementById('postFileName');
+    const postFileInfo = document.getElementById('postFileInfo');
+
     const contentTitleInput = document.getElementById('contentTitle');
     const contentDescInput = document.getElementById('contentDesc');
     const autoThumbGrid = document.getElementById('autoThumbGrid');
@@ -24,12 +30,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const tabPollPost = document.getElementById('tabPollPost');
     const pollInputsContainer = document.getElementById('pollInputsContainer');
     const imagePostInputsContainer = document.getElementById('imagePostInputsContainer');
-    const pollQuestionInput = document.getElementById('pollQuestionInput');
     const pollOpt1 = document.getElementById('pollOpt1');
     const pollOpt2 = document.getElementById('pollOpt2');
     const pollOpt3 = document.getElementById('pollOpt3');
     const pollOpt4 = document.getElementById('pollOpt4');
-    const postImageInput = document.getElementById('postImageInput');
 
     const homeView = document.getElementById('homeView');
     const postsView = document.getElementById('postsView');
@@ -96,8 +100,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeAuthModalBtn = document.getElementById('closeAuthModalBtn');
 
     const avatarPreview = document.getElementById('avatarPreview');
-    const customAvatarInput = document.getElementById('customAvatarInput');
-    const selectPictureBtn = document.getElementById('selectPictureBtn');
     const profileNameInput = document.getElementById('profileNameInput');
     const profileHandleInput = document.getElementById('profileHandleInput');
     const confirmProfileBtn = document.getElementById('confirmProfileBtn');
@@ -118,11 +120,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let currentStep = 1;
     let selectedType = 'video';
-    let postSubMode = 'text'; // 'text' or 'poll'
+    let postSubMode = 'text';
     let selectedFile = null;
+    let selectedPostImageFile = null;
     let chosenThumbnailUrl = null;
     let videoDurationSeconds = 0;
-    let customAvatarUrl = null;
     let googleDefaultAvatar = null;
     let isLoggedIn = false;
     let tokenClient = null;
@@ -210,7 +212,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     checkSavedSession();
 
-    // PLAYER KONTROLLERİ
     function togglePlayPause() {
         if (mainVideoPlayer.paused) {
             mainVideoPlayer.play();
@@ -263,7 +264,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // TAKİP (FOLLOW) SİSTEMİ
     function isFollowing(handle) {
         if (!currentUserData) return false;
         const subs = JSON.parse(localStorage.getItem('yt_subs_' + currentUserData.handle) || '[]');
@@ -271,20 +271,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function toggleFollow(handle) {
-        if (!isLoggedIn) {
-            authModal.classList.add('active');
-            return;
-        }
+        if (!isLoggedIn) { authModal.classList.add('active'); return; }
         if (currentUserData && currentUserData.handle === handle) return;
 
         const key = 'yt_subs_' + currentUserData.handle;
         let subs = JSON.parse(localStorage.getItem(key) || '[]');
         const idx = subs.indexOf(handle);
-        if (idx > -1) {
-            subs.splice(idx, 1);
-        } else {
-            subs.push(handle);
-        }
+        if (idx > -1) subs.splice(idx, 1);
+        else subs.push(handle);
         localStorage.setItem(key, JSON.stringify(subs));
         updateFollowButtons(handle);
     }
@@ -293,19 +287,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const isSelf = currentUserData && currentUserData.handle === handle;
         [watchSubscribeBtn, subscribeMainBtn].forEach(btn => {
             if (!btn) return;
-            if (isSelf) {
-                btn.style.display = 'none';
-                return;
-            }
+            if (isSelf) { btn.style.display = 'none'; return; }
             btn.style.display = 'block';
             const following = isFollowing(handle);
-            if (following) {
-                btn.textContent = 'Following';
-                btn.classList.add('subscribed');
-            } else {
-                btn.textContent = 'Follow';
-                btn.classList.remove('subscribed');
-            }
+            if (following) { btn.textContent = 'Following'; btn.classList.add('subscribed'); }
+            else { btn.textContent = 'Follow'; btn.classList.remove('subscribed'); }
         });
     }
 
@@ -316,14 +302,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentViewingChannelHandle) toggleFollow(currentViewingChannelHandle);
     });
 
-    // VERIFIED TIK KONTROLÜ (x >= 10 veya senin mail)
     function shouldVerify(email, handle) {
         if (email === 'ugakegqreoqte@gmail.com' || handle === 'freezyofficial0') return true;
-        // Varsayılan olarak 10 aboneyi geçenlere ver
-        return true; 
+        return true;
     }
 
-    // FEED & POSTS RENDER
     async function loadFeed(viewMode = 'home', searchQuery = '') {
         triggerLoadingBar();
         homeView.style.display = viewMode === 'home' ? 'block' : 'none';
@@ -348,10 +331,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     );
                 }
 
-                if (videos.length === 0) {
-                    emptyFeed.style.display = 'block';
-                    return;
-                }
+                if (videos.length === 0) { emptyFeed.style.display = 'block'; return; }
                 emptyFeed.style.display = 'none';
 
                 videos.reverse().forEach(item => {
@@ -392,18 +372,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 postsFeedGrid.innerHTML = '';
                 let posts = allContents.filter(c => c.type === 'post');
 
-                if (searchQuery.trim() !== '') {
-                    const q = searchQuery.toLowerCase().trim();
-                    posts = posts.filter(item => 
-                        (item.title && item.title.toLowerCase().includes(q)) || 
-                        (item.authorName && item.authorName.toLowerCase().includes(q))
-                    );
-                }
-
-                if (posts.length === 0) {
-                    emptyPostsFeed.style.display = 'block';
-                    return;
-                }
+                if (posts.length === 0) { emptyPostsFeed.style.display = 'block'; return; }
                 emptyPostsFeed.style.display = 'none';
 
                 posts.reverse().forEach(item => {
@@ -412,10 +381,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (viewMode === 'reposts') {
                 postsFeedGrid.innerHTML = '';
                 let reposts = allContents.filter(c => c.repostedUsers && c.repostedUsers.length > 0);
-                if (reposts.length === 0) {
-                    emptyPostsFeed.style.display = 'block';
-                    return;
-                }
+                if (reposts.length === 0) { emptyPostsFeed.style.display = 'block'; return; }
                 emptyPostsFeed.style.display = 'none';
                 reposts.reverse().forEach(item => {
                     renderPostCard(item, postsFeedGrid);
@@ -512,7 +478,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         card.querySelector('.post-author-link').addEventListener('click', () => openChannelPageByHandle(item.authorHandle));
 
-        // Like post
         card.querySelector('.like-post-btn').addEventListener('click', async (e) => {
             if (!isLoggedIn) { authModal.classList.add('active'); return; }
             const res = await fetch(`/api/contents/${item.id}/like`, {
@@ -528,7 +493,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Repost post
         card.querySelector('.repost-post-btn').addEventListener('click', async (e) => {
             if (!isLoggedIn) { authModal.classList.add('active'); return; }
             const res = await fetch(`/api/contents/${item.id}/repost`, {
@@ -543,7 +507,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Poll voting
         card.querySelectorAll('.poll-option-btn').forEach(btn => {
             btn.addEventListener('click', async () => {
                 if (!isLoggedIn) { authModal.classList.add('active'); return; }
@@ -555,23 +518,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await res.json();
                 if (data.success) {
                     item.pollVotes = data.pollVotes;
-                    renderPostsFeed(); // yenile
+                    loadFeed('posts');
                 } else {
                     alert(data.error || 'Zaten oy verdiniz!');
                 }
             });
         });
 
-        // Open comment modal for post
-        card.querySelector('.comment-post-btn').addEventListener('click', () => {
-            openPostCommentModal(item);
-        });
-
+        card.querySelector('.comment-post-btn').addEventListener('click', () => openPostCommentModal(item));
         container.appendChild(card);
-    }
-
-    function renderPostsFeed() {
-        loadFeed('posts');
     }
 
     function openPostCommentModal(item) {
@@ -664,10 +619,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateFollowButtons(handle);
 
         channelGrid.innerHTML = '';
-        if (channelContents.length === 0) {
-            emptyChannelFeed.style.display = 'block';
-            return;
-        }
+        if (channelContents.length === 0) { emptyChannelFeed.style.display = 'block'; return; }
         emptyChannelFeed.style.display = 'none';
 
         channelContents.reverse().forEach(item => {
@@ -710,11 +662,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (item.likedUsers && item.likedUsers.includes(currentEmail)) likeBtn.classList.add('active');
         else likeBtn.classList.remove('active');
 
-        if (item.repostedUsers && currentUserData && item.repostedUsers.includes(currentUserData.handle)) {
-            repostBtn.classList.add('active');
-        } else {
-            repostBtn.classList.remove('active');
-        }
+        if (item.repostedUsers && currentUserData && item.repostedUsers.includes(currentUserData.handle)) repostBtn.classList.add('active');
+        else repostBtn.classList.remove('active');
 
         if (item.authorAvatar) watchAvatar.innerHTML = `<img src="${item.authorAvatar}">`;
         else { watchAvatar.style.backgroundColor = item.authorBg || '#a855f7'; watchAvatar.textContent = item.authorName.charAt(0).toUpperCase(); }
@@ -812,7 +761,6 @@ document.addEventListener('DOMContentLoaded', () => {
         loadFeed('home');
     });
 
-    // GOOGLE AUTH (Cihaz Bağımsız Senkronize)
     function initGoogleAuth() {
         if (typeof google !== 'undefined' && google.accounts) {
             tokenClient = google.accounts.oauth2.initTokenClient({
@@ -950,6 +898,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    selectPostFileBtn.addEventListener('click', () => postImageInput.click());
+    postImageInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+            selectedPostImageFile = e.target.files[0];
+            postFileName.textContent = selectedPostImageFile.name;
+            postFileInfo.style.display = 'block';
+        }
+    });
+
     function generateAutoThumbnails(videoFile) {
         const videoUrl = URL.createObjectURL(videoFile);
         const tempVid = document.createElement('video');
@@ -1018,8 +975,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     ].filter(Boolean);
                     formData.append('pollOptions', JSON.stringify(opts));
                 } else {
-                    const imgFile = postImageInput.files[0];
-                    if (imgFile) formData.append('file', imgFile);
+                    if (selectedPostImageFile) {
+                        formData.append('file', selectedPostImageFile);
+                        formData.append('thumbnailUrl', URL.createObjectURL(selectedPostImageFile));
+                    }
                 }
             }
 
@@ -1051,10 +1010,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function resetWizard() {
         currentStep = 1;
         selectedFile = null;
+        selectedPostImageFile = null;
         chosenThumbnailUrl = null;
         videoDurationSeconds = 0;
         fileInput.value = '';
-        fileInfoBox.style.display = 'none';
+        if(postImageInput) postImageInput.value = '';
+        if(fileInfoBox) fileInfoBox.style.display = 'none';
+        if(postFileInfo) postFileInfo.style.display = 'none';
         contentTitleInput.value = '';
         contentDescInput.value = '';
         autoThumbGrid.innerHTML = '';
