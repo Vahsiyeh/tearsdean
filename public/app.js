@@ -149,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
     }
 
-    // ZORUNLU GİRİŞ KONTROLÜ (Google veya Apple cihaz şartı)
+    // Giriş yapılmış mı kontrol et (Ana sayfada zorunluluk yok, herkes gezebilir)
     function checkSavedSession() {
         const activeEmail = localStorage.getItem('yt_active_email');
         const allChannels = JSON.parse(localStorage.getItem('yt_all_channels') || '{}');
@@ -159,15 +159,11 @@ document.addEventListener('DOMContentLoaded', () => {
             currentUserData = allChannels[activeEmail];
             isLoggedIn = true;
             applyUserSession(currentUserData);
-            loadFeed('all');
         } else {
             isLoggedIn = false;
             currentUserData = null;
-            // Zorunlu Giriş Modalını Aç (Kapatılamaz, zorunlu!)
-            authStepLogin.style.display = 'block';
-            authStepProfile.style.display = 'none';
-            authModal.classList.add('active');
         }
+        loadFeed('all');
     }
 
     function applyUserSession(user) {
@@ -283,6 +279,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function loadChannelPage() {
         if (!isLoggedIn || !currentUserData) {
+            authStepLogin.style.display = 'block';
+            authStepProfile.style.display = 'none';
             authModal.classList.add('active');
             return;
         }
@@ -453,7 +451,6 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('yt_active_email', email);
             authModal.classList.remove('active');
             applyUserSession(allChannels[email]);
-            loadFeed('all');
             return;
         }
         startProfileSetup(defaultName, defaultAvatar);
@@ -549,7 +546,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!takenHandles.includes(handle)) takenHandles.push(handle);
         applyUserSession(userData);
         authModal.classList.remove('active');
-        loadFeed('all');
     });
 
     userAvatarBtn.addEventListener('click', (e) => {
@@ -573,7 +569,6 @@ document.addEventListener('DOMContentLoaded', () => {
         alert('Opening Account Settings...');
     });
 
-    // Çıkış yapınca tekrar Google/Apple zorunlu giriş ekranını patlatıyoruz
     logoutBtn.addEventListener('click', () => {
         localStorage.removeItem('yt_active_email');
         isLoggedIn = false;
@@ -582,23 +577,33 @@ document.addEventListener('DOMContentLoaded', () => {
         profileDropdown.classList.remove('active');
         userProfile.style.display = 'none';
         openAuthBtn.style.display = 'flex';
-        
+        loadFeed('all');
+    });
+
+    openAuthBtn.addEventListener('click', () => {
+        const activeEmail = localStorage.getItem('yt_active_email');
+        const allChannels = JSON.parse(localStorage.getItem('yt_all_channels') || '{}');
+        if (activeEmail && allChannels[activeEmail]) {
+            applyUserSession(allChannels[activeEmail]);
+            return;
+        }
         authStepLogin.style.display = 'block';
         authStepProfile.style.display = 'none';
         authModal.classList.add('active');
     });
 
-    openAuthBtn.addEventListener('click', () => {
-        authStepLogin.style.display = 'block';
-        authStepProfile.style.display = 'none';
-        authModal.classList.add('active');
-    });
+    closeAuthModalBtn = document.getElementById('closeAuthModalBtn');
+    if (closeAuthModalBtn) {
+        closeAuthModalBtn.addEventListener('click', () => authModal.classList.remove('active'));
+    }
 
     navItems.forEach(item => {
         item.addEventListener('click', () => {
             const pageTarget = item.dataset.nav;
             if (pageTarget === 'upload') {
                 if (!isLoggedIn) {
+                    authStepLogin.style.display = 'block';
+                    authStepProfile.style.display = 'none';
                     authModal.classList.add('active');
                     return;
                 }
@@ -619,6 +624,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     createBtn.addEventListener('click', () => {
         if (!isLoggedIn) {
+            authStepLogin.style.display = 'block';
+            authStepProfile.style.display = 'none';
             authModal.classList.add('active');
             return;
         }
