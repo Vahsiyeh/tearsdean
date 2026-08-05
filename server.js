@@ -44,14 +44,12 @@ app.get('/api/contents', (req, res) => {
     res.json(getContents());
 });
 
-// Kullanıcı Senkronizasyonu (Mail tabanlı cihaz bağımsız)
 app.post('/api/sync-user', (req, res) => {
     const { email, name, handle, avatarUrl, bgColor } = req.body;
     if (!email) return res.status(400).json({ error: 'Email gerekli' });
 
     let users = getUsers();
     if (!users[email]) {
-        // Eğer özel mailinse veya ilk kez açılıyorsa
         let finalHandle = handle || email.split('@')[0];
         let finalName = name || 'User';
         if (email === 'ugakegqreoqte@gmail.com') {
@@ -64,7 +62,7 @@ app.post('/api/sync-user', (req, res) => {
             handle: finalHandle,
             avatarUrl: avatarUrl || '',
             bgColor: bgColor || '#a855f7',
-            subscribersCount: 15 // Otomatik 10 üstü (tik için)
+            subscribersCount: 15
         };
         saveUsers(users);
     }
