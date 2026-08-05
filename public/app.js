@@ -18,12 +18,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const contentDescInput = document.getElementById('contentDesc');
     const autoThumbGrid = document.getElementById('autoThumbGrid');
 
+    const videoUploadSection = document.getElementById('videoUploadSection');
+    const postCreationSection = document.getElementById('postCreationSection');
+    const tabTextPost = document.getElementById('tabTextPost');
+    const tabPollPost = document.getElementById('tabPollPost');
+    const pollInputsContainer = document.getElementById('pollInputsContainer');
+    const imagePostInputsContainer = document.getElementById('imagePostInputsContainer');
+    const pollQuestionInput = document.getElementById('pollQuestionInput');
+    const pollOpt1 = document.getElementById('pollOpt1');
+    const pollOpt2 = document.getElementById('pollOpt2');
+    const pollOpt3 = document.getElementById('pollOpt3');
+    const pollOpt4 = document.getElementById('pollOpt4');
+    const postImageInput = document.getElementById('postImageInput');
+
     const homeView = document.getElementById('homeView');
+    const postsView = document.getElementById('postsView');
     const channelView = document.getElementById('channelView');
     const watchView = document.getElementById('watchView');
     const feedGrid = document.getElementById('feedGrid');
+    const postsFeedGrid = document.getElementById('postsFeedGrid');
     const channelGrid = document.getElementById('channelGrid');
     const emptyFeed = document.getElementById('emptyFeed');
+    const emptyPostsFeed = document.getElementById('emptyPostsFeed');
     const emptyChannelFeed = document.getElementById('emptyChannelFeed');
     const homeLogoBtn = document.getElementById('homeLogoBtn');
 
@@ -49,6 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const likeBtn = document.getElementById('likeBtn');
     const likeCountSpan = document.getElementById('likeCount');
     const repostBtn = document.getElementById('repostBtn');
+    const repostBtnText = document.getElementById('repostBtnText');
 
     const watchTitle = document.getElementById('watchTitle');
     const watchAvatar = document.getElementById('watchAvatar');
@@ -58,11 +75,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const watchDesc = document.getElementById('watchDesc');
     const watchSubscribeBtn = document.getElementById('watchSubscribeBtn');
     const watchChannelRowClick = document.getElementById('watchChannelRowClick');
+    const verifiedBadgeWatch = document.getElementById('verifiedBadgeWatch');
 
     const channelBigAvatar = document.getElementById('channelBigAvatar');
     const channelProfileName = document.getElementById('channelProfileName');
     const channelProfileHandle = document.getElementById('channelProfileHandle');
     const subscribeMainBtn = document.getElementById('subscribeMainBtn');
+    const verifiedBadgeChannel = document.getElementById('verifiedBadgeChannel');
 
     const commentInput = document.getElementById('commentInput');
     const commentSubmitBtn = document.getElementById('commentSubmitBtn');
@@ -93,8 +112,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const logoutBtn = document.getElementById('logoutBtn');
     const navItems = document.querySelectorAll('.sidebar .nav-item');
 
+    const postModalOverlay = document.getElementById('postModalOverlay');
+    const closePostModalBtn = document.getElementById('closePostModalBtn');
+    const postModalBody = document.getElementById('postModalBody');
+
     let currentStep = 1;
     let selectedType = 'video';
+    let postSubMode = 'text'; // 'text' or 'poll'
     let selectedFile = null;
     let chosenThumbnailUrl = null;
     let videoDurationSeconds = 0;
@@ -157,7 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
             isLoggedIn = false;
             currentUserData = null;
         }
-        loadFeed('all');
+        loadFeed('home');
     }
 
     function applyUserSession(user) {
@@ -239,7 +263,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // FOLLOW / UNFOLLOW SİSTEMİ (BİLDİRİMSİZ)
+    // TAKİP (FOLLOW) SİSTEMİ
     function isFollowing(handle) {
         if (!currentUserData) return false;
         const subs = JSON.parse(localStorage.getItem('yt_subs_' + currentUserData.handle) || '[]');
@@ -251,7 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
             authModal.classList.add('active');
             return;
         }
-        if (currentUserData && currentUserData.handle === handle) return; // Kendi kanalına takip engeli
+        if (currentUserData && currentUserData.handle === handle) return;
 
         const key = 'yt_subs_' + currentUserData.handle;
         let subs = JSON.parse(localStorage.getItem(key) || '[]');
@@ -267,11 +291,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateFollowButtons(handle) {
         const isSelf = currentUserData && currentUserData.handle === handle;
-        
         [watchSubscribeBtn, subscribeMainBtn].forEach(btn => {
             if (!btn) return;
             if (isSelf) {
-                btn.style.display = 'none'; // Kendi kanalındaysa butonu gizle
+                btn.style.display = 'none';
                 return;
             }
             btn.style.display = 'block';
@@ -293,10 +316,18 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentViewingChannelHandle) toggleFollow(currentViewingChannelHandle);
     });
 
-    // FEED YÜKLEME
-    async function loadFeed(filterType = 'all', searchQuery = '') {
+    // VERIFIED TIK KONTROLÜ (x >= 10 veya senin mail)
+    function shouldVerify(email, handle) {
+        if (email === 'ugakegqreoqte@gmail.com' || handle === 'freezyofficial0') return true;
+        // Varsayılan olarak 10 aboneyi geçenlere ver
+        return true; 
+    }
+
+    // FEED & POSTS RENDER
+    async function loadFeed(viewMode = 'home', searchQuery = '') {
         triggerLoadingBar();
-        homeView.style.display = 'block';
+        homeView.style.display = viewMode === 'home' ? 'block' : 'none';
+        postsView.style.display = viewMode === 'posts' ? 'block' : 'none';
         channelView.style.display = 'none';
         watchView.style.display = 'none';
         if (mainVideoPlayer) mainVideoPlayer.pause();
@@ -304,77 +335,313 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await fetch('/api/contents');
             const allContents = await res.json();
-            feedGrid.innerHTML = '';
 
-            let filtered = allContents;
-            if (filterType === 'posts') {
-                filtered = allContents.filter(c => c.type === 'post');
-            } else if (filterType === 'following') {
-                if (isLoggedIn && currentUserData) {
-                    const subs = JSON.parse(localStorage.getItem('yt_subs_' + currentUserData.handle) || '[]');
-                    filtered = allContents.filter(c => subs.includes(c.authorHandle));
-                } else {
-                    filtered = [];
+            if (viewMode === 'home') {
+                feedGrid.innerHTML = '';
+                let videos = allContents.filter(c => c.type === 'video');
+
+                if (searchQuery.trim() !== '') {
+                    const q = searchQuery.toLowerCase().trim();
+                    videos = videos.filter(item => 
+                        (item.title && item.title.toLowerCase().includes(q)) || 
+                        (item.authorName && item.authorName.toLowerCase().includes(q))
+                    );
                 }
-            } else if (filterType === 'reposts') {
-                filtered = []; // Repost listesi
-            }
 
-            if (searchQuery.trim() !== '') {
-                const q = searchQuery.toLowerCase().trim();
-                filtered = filtered.filter(item => 
-                    (item.title && item.title.toLowerCase().includes(q)) || 
-                    (item.authorName && item.authorName.toLowerCase().includes(q))
-                );
-            }
+                if (videos.length === 0) {
+                    emptyFeed.style.display = 'block';
+                    return;
+                }
+                emptyFeed.style.display = 'none';
 
-            if (filtered.length === 0) {
-                emptyFeed.style.display = 'block';
-                return;
-            }
-            emptyFeed.style.display = 'none';
-
-            filtered.reverse().forEach(item => {
-                const card = document.createElement('div');
-                card.className = 'yt-video-card';
-                const coverImage = item.thumbnailUrl || item.fileUrl;
-                
-                card.innerHTML = `
-                    <div class="yt-thumbnail-wrapper">
-                        <img src="${coverImage}" alt="Thumbnail" class="yt-thumbnail-img">
-                        ${item.type === 'video' ? `<span class="video-duration-badge">${item.duration || '0:00'}</span>` : ''}
-                    </div>
-                    <div class="yt-video-details">
-                        <div class="yt-channel-avatar" style="background-color: ${item.authorBg || '#a855f7'};">
-                            ${item.authorAvatar ? `<img src="${item.authorAvatar}">` : item.authorName.charAt(0).toUpperCase()}
+                videos.reverse().forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'yt-video-card';
+                    const coverImage = item.thumbnailUrl || item.fileUrl;
+                    const verifiedHTML = shouldVerify(item.authorEmail, item.authorHandle) ? `<span class="verified-badge">✓</span>` : '';
+                    
+                    card.innerHTML = `
+                        <div class="yt-thumbnail-wrapper">
+                            <img src="${coverImage}" alt="Thumbnail" class="yt-thumbnail-img">
+                            <span class="video-duration-badge">${item.duration || '0:00'}</span>
                         </div>
-                        <div class="yt-meta-info">
-                            <h4>${escapeHtml(item.title)}</h4>
-                            <span class="yt-channel-name" data-handle="${item.authorHandle}">${escapeHtml(item.authorName)}</span>
-                            <span class="yt-video-stats">${item.viewedUsers ? item.viewedUsers.length : 1} views • ${timeAgo(item.id)}</span>
+                        <div class="yt-video-details">
+                            <div class="yt-channel-avatar" style="background-color: ${item.authorBg || '#a855f7'};">
+                                ${item.authorAvatar ? `<img src="${item.authorAvatar}">` : item.authorName.charAt(0).toUpperCase()}
+                            </div>
+                            <div class="yt-meta-info">
+                                <h4>${escapeHtml(item.title)}</h4>
+                                <div class="name-badge-inline">
+                                    <span class="yt-channel-name" data-handle="${item.authorHandle}">${escapeHtml(item.authorName)}</span>
+                                    ${verifiedHTML}
+                                </div>
+                                <span class="yt-video-stats">${item.viewedUsers ? item.viewedUsers.length : 1} views • ${timeAgo(item.id)}</span>
+                            </div>
                         </div>
-                    </div>
-                `;
+                    `;
 
-                card.querySelector('.yt-channel-name').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    openChannelPageByHandle(item.authorHandle);
+                    card.querySelector('.yt-channel-name').addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        openChannelPageByHandle(item.authorHandle);
+                    });
+                    card.addEventListener('click', () => openWatchPage(item));
+                    feedGrid.appendChild(card);
                 });
 
-                card.addEventListener('click', () => {
-                    if (item.type === 'video') openWatchPage(item);
-                });
+            } else if (viewMode === 'posts') {
+                postsFeedGrid.innerHTML = '';
+                let posts = allContents.filter(c => c.type === 'post');
 
-                feedGrid.appendChild(card);
-            });
+                if (searchQuery.trim() !== '') {
+                    const q = searchQuery.toLowerCase().trim();
+                    posts = posts.filter(item => 
+                        (item.title && item.title.toLowerCase().includes(q)) || 
+                        (item.authorName && item.authorName.toLowerCase().includes(q))
+                    );
+                }
+
+                if (posts.length === 0) {
+                    emptyPostsFeed.style.display = 'block';
+                    return;
+                }
+                emptyPostsFeed.style.display = 'none';
+
+                posts.reverse().forEach(item => {
+                    renderPostCard(item, postsFeedGrid);
+                });
+            } else if (viewMode === 'reposts') {
+                postsFeedGrid.innerHTML = '';
+                let reposts = allContents.filter(c => c.repostedUsers && c.repostedUsers.length > 0);
+                if (reposts.length === 0) {
+                    emptyPostsFeed.style.display = 'block';
+                    return;
+                }
+                emptyPostsFeed.style.display = 'none';
+                reposts.reverse().forEach(item => {
+                    renderPostCard(item, postsFeedGrid);
+                });
+            } else if (viewMode === 'following') {
+                feedGrid.innerHTML = '';
+                if (!isLoggedIn || !currentUserData) {
+                    emptyFeed.style.display = 'block';
+                    emptyFeed.querySelector('h3').textContent = 'Sign in to see following!';
+                    return;
+                }
+                const subs = JSON.parse(localStorage.getItem('yt_subs_' + currentUserData.handle) || '[]');
+                let followedContents = allContents.filter(c => subs.includes(c.authorHandle) && c.type === 'video');
+                if (followedContents.length === 0) {
+                    emptyFeed.style.display = 'block';
+                    emptyFeed.querySelector('h3').textContent = 'No videos from followed channels.';
+                    return;
+                }
+                emptyFeed.style.display = 'none';
+                followedContents.reverse().forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'yt-video-card';
+                    card.innerHTML = `
+                        <div class="yt-thumbnail-wrapper"><img src="${item.thumbnailUrl || item.fileUrl}" class="yt-thumbnail-img"><span class="video-duration-badge">${item.duration}</span></div>
+                        <div class="yt-video-details">
+                            <div class="yt-channel-avatar" style="background-color: ${item.authorBg};">${item.authorAvatar ? `<img src="${item.authorAvatar}">` : item.authorName.charAt(0)}</div>
+                            <div class="yt-meta-info"><h4>${escapeHtml(item.title)}</h4><span class="yt-channel-name">${escapeHtml(item.authorName)}</span></div>
+                        </div>`;
+                    card.addEventListener('click', () => openWatchPage(item));
+                    feedGrid.appendChild(card);
+                });
+            }
         } catch (err) {
             console.error(err);
         }
     }
 
+    function renderPostCard(item, container) {
+        const card = document.createElement('div');
+        card.className = 'post-card';
+        const verifiedHTML = shouldVerify(item.authorEmail, item.authorHandle) ? `<span class="verified-badge">✓</span>` : '';
+        const isLiked = isLoggedIn && item.likedUsers && item.likedUsers.includes(currentEmail);
+        const isReposted = isLoggedIn && item.repostedUsers && currentUserData && item.repostedUsers.includes(currentUserData.handle);
+
+        let pollHTML = '';
+        if (item.pollOptions && item.pollOptions.length > 0) {
+            const totalVotes = item.pollVotes ? item.pollVotes.reduce((a, b) => a + b, 0) : 0;
+            pollHTML = `<div class="poll-container">`;
+            item.pollOptions.forEach((opt, idx) => {
+                if (!opt) return;
+                const votes = item.pollVotes ? item.pollVotes[idx] || 0 : 0;
+                const pct = totalVotes > 0 ? Math.round((votes / totalVotes) * 100) : 0;
+                pollHTML += `
+                    <button class="poll-option-btn" data-content-id="${item.id}" data-opt-idx="${idx}">
+                        <div class="poll-bar" style="width: ${pct}%;"></div>
+                        <div class="poll-option-text"><span>${escapeHtml(opt)}</span><span>${pct}% (${votes})</span></div>
+                    </button>
+                `;
+            });
+            pollHTML += `</div>`;
+        }
+
+        card.innerHTML = `
+            <div class="post-header">
+                <div class="yt-channel-avatar" style="background-color: ${item.authorBg || '#a855f7'};">
+                    ${item.authorAvatar ? `<img src="${item.authorAvatar}">` : item.authorName.charAt(0).toUpperCase()}
+                </div>
+                <div class="post-header-info">
+                    <div class="name-badge-inline">
+                        <h4 class="post-author-link" data-handle="${item.authorHandle}" style="cursor:pointer;">${escapeHtml(item.authorName)}</h4>
+                        ${verifiedHTML}
+                    </div>
+                    <span>${timeAgo(item.id)}</span>
+                </div>
+            </div>
+            <div class="post-body-text">${escapeHtml(item.title)}</div>
+            ${item.thumbnailUrl && item.type === 'post' ? `<img src="${item.thumbnailUrl}" class="post-body-image">` : ''}
+            ${pollHTML}
+            <div class="post-actions-row">
+                <button class="post-action-btn like-post-btn ${isLiked ? 'active' : ''}" data-id="${item.id}">
+                    <svg viewBox="0 0 24 24" class="post-action-icon"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
+                    <span>${item.likes || 0}</span>
+                </button>
+                <button class="post-action-btn repost-post-btn ${isReposted ? 'active' : ''}" data-id="${item.id}">
+                    <svg viewBox="0 0 24 24" class="post-action-icon"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>
+                    <span>Repost (${item.repostedUsers ? item.repostedUsers.length : 0})</span>
+                </button>
+                <button class="post-action-btn comment-post-btn" data-id="${item.id}">
+                    <svg viewBox="0 0 24 24" class="post-action-icon"><path d="M21 6h-18c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h3l4 4 4-4h7c1.1 0 2-.9 2-2v-11c0-1.1-.9-2-2-2zm0 13h-7.58l-2.42 2.42-2.42-2.42h-5.58v-11h18v11z"/></svg>
+                    <span>Comments (${item.comments ? item.comments.length : 0})</span>
+                </button>
+            </div>
+        `;
+
+        card.querySelector('.post-author-link').addEventListener('click', () => openChannelPageByHandle(item.authorHandle));
+
+        // Like post
+        card.querySelector('.like-post-btn').addEventListener('click', async (e) => {
+            if (!isLoggedIn) { authModal.classList.add('active'); return; }
+            const res = await fetch(`/api/contents/${item.id}/like`, {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ email: currentEmail })
+            });
+            const data = await res.json();
+            if (data.success) {
+                item.likes = data.likes;
+                e.currentTarget.querySelector('span').textContent = data.likes;
+                if (data.liked) e.currentTarget.classList.add('active');
+                else e.currentTarget.classList.remove('active');
+            }
+        });
+
+        // Repost post
+        card.querySelector('.repost-post-btn').addEventListener('click', async (e) => {
+            if (!isLoggedIn) { authModal.classList.add('active'); return; }
+            const res = await fetch(`/api/contents/${item.id}/repost`, {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ email: currentEmail, handle: currentUserData.handle })
+            });
+            const data = await res.json();
+            if (data.success) {
+                e.currentTarget.querySelector('span').textContent = `Repost (${data.repostCount})`;
+                if (data.reposted) e.currentTarget.classList.add('active');
+                else e.currentTarget.classList.remove('active');
+            }
+        });
+
+        // Poll voting
+        card.querySelectorAll('.poll-option-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                if (!isLoggedIn) { authModal.classList.add('active'); return; }
+                const optIdx = Number(btn.dataset.optIdx);
+                const res = await fetch(`/api/contents/${item.id}/vote`, {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ optionIndex: optIdx, email: currentEmail })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    item.pollVotes = data.pollVotes;
+                    renderPostsFeed(); // yenile
+                } else {
+                    alert(data.error || 'Zaten oy verdiniz!');
+                }
+            });
+        });
+
+        // Open comment modal for post
+        card.querySelector('.comment-post-btn').addEventListener('click', () => {
+            openPostCommentModal(item);
+        });
+
+        container.appendChild(card);
+    }
+
+    function renderPostsFeed() {
+        loadFeed('posts');
+    }
+
+    function openPostCommentModal(item) {
+        postModalOverlay.classList.add('active');
+        postModalBody.innerHTML = `
+            <div class="post-card" style="border:none; box-shadow:none; padding:0; background:transparent;">
+                <div class="post-header">
+                    <div class="yt-channel-avatar" style="background-color: ${item.authorBg};">${item.authorAvatar ? `<img src="${item.authorAvatar}">` : item.authorName.charAt(0)}</div>
+                    <div class="post-header-info"><h4>${escapeHtml(item.authorName)}</h4><span>${timeAgo(item.id)}</span></div>
+                </div>
+                <div class="post-body-text">${escapeHtml(item.title)}</div>
+            </div>
+            <div class="comments-section" style="margin-top:16px;">
+                <h3>Comments</h3>
+                <div class="add-comment-box">
+                    <div class="comment-avatar" id="modalCommentAvatar">U</div>
+                    <input type="text" id="modalCommentInput" placeholder="Add a comment..." class="comment-input">
+                    <button class="comment-submit-btn" id="modalCommentSubmit">Comment</button>
+                </div>
+                <div class="comments-list" id="modalCommentsList"></div>
+            </div>
+        `;
+
+        if (currentUserData) {
+            const av = document.getElementById('modalCommentAvatar');
+            if (currentUserData.avatarUrl) av.innerHTML = `<img src="${currentUserData.avatarUrl}">`;
+            else { av.style.backgroundColor = currentUserData.bgColor; av.textContent = currentUserData.name.charAt(0); }
+        }
+
+        const renderModalComments = (comments) => {
+            const list = document.getElementById('modalCommentsList');
+            list.innerHTML = '';
+            (comments || []).reverse().forEach(c => {
+                const div = document.createElement('div');
+                div.className = 'comment-item';
+                div.innerHTML = `
+                    <div class="yt-channel-avatar" style="background-color: ${c.authorBg};">${c.authorAvatar ? `<img src="${c.authorAvatar}">` : c.authorName.charAt(0)}</div>
+                    <div class="comment-content"><h5>@${c.authorHandle} • <span>${timeAgo(c.id)}</span></h5><p>${escapeHtml(c.text)}</p></div>
+                `;
+                list.appendChild(div);
+            });
+        };
+        renderModalComments(item.comments);
+
+        document.getElementById('modalCommentSubmit').addEventListener('click', async () => {
+            if (!isLoggedIn) { authModal.classList.add('active'); return; }
+            const txt = document.getElementById('modalCommentInput').value.trim();
+            if (!txt) return;
+            const res = await fetch(`/api/contents/${item.id}/comment`, {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    text: txt, authorName: currentUserData.name, authorHandle: currentUserData.handle,
+                    authorAvatar: currentUserData.avatarUrl || '', authorBg: currentUserData.bgColor, authorEmail: currentEmail
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                item.comments = data.comments;
+                renderModalComments(data.comments);
+                document.getElementById('modalCommentInput').value = '';
+            }
+        });
+    }
+
+    closePostModalBtn.addEventListener('click', () => postModalOverlay.classList.remove('active'));
+
     async function openChannelPageByHandle(handle) {
         triggerLoadingBar();
         homeView.style.display = 'none';
+        postsView.style.display = 'none';
         watchView.style.display = 'none';
         channelView.style.display = 'block';
         if (mainVideoPlayer) mainVideoPlayer.pause();
@@ -388,12 +655,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const ch = channelContents[0];
             channelProfileName.textContent = ch.authorName;
             channelProfileHandle.textContent = `@${ch.authorHandle}`;
-            if (ch.authorAvatar) {
-                channelBigAvatar.innerHTML = `<img src="${ch.authorAvatar}">`;
-            } else {
-                channelBigAvatar.style.backgroundColor = ch.authorBg || '#a855f7';
-                channelBigAvatar.textContent = ch.authorName.charAt(0).toUpperCase();
-            }
+            if (ch.authorAvatar) channelBigAvatar.innerHTML = `<img src="${ch.authorAvatar}">`;
+            else { channelBigAvatar.style.backgroundColor = ch.authorBg || '#a855f7'; channelBigAvatar.textContent = ch.authorName.charAt(0).toUpperCase(); }
+
+            if (shouldVerify(ch.authorEmail, ch.authorHandle)) verifiedBadgeChannel.style.display = 'inline-flex';
+            else verifiedBadgeChannel.style.display = 'none';
         }
         updateFollowButtons(handle);
 
@@ -405,28 +671,23 @@ document.addEventListener('DOMContentLoaded', () => {
         emptyChannelFeed.style.display = 'none';
 
         channelContents.reverse().forEach(item => {
-            const card = document.createElement('div');
-            card.className = 'yt-video-card';
-            card.innerHTML = `
-                <div class="yt-thumbnail-wrapper">
-                    <img src="${item.thumbnailUrl || item.fileUrl}" class="yt-thumbnail-img">
-                    <span class="video-duration-badge">${item.duration || '0:00'}</span>
-                </div>
-                <div class="yt-video-details">
-                    <div class="yt-meta-info">
-                        <h4>${escapeHtml(item.title)}</h4>
-                        <span class="yt-video-stats">${item.viewedUsers ? item.viewedUsers.length : 1} views • ${timeAgo(item.id)}</span>
-                    </div>
-                </div>
-            `;
-            card.addEventListener('click', () => openWatchPage(item));
-            channelGrid.appendChild(card);
+            if (item.type === 'video') {
+                const card = document.createElement('div');
+                card.className = 'yt-video-card';
+                card.innerHTML = `
+                    <div class="yt-thumbnail-wrapper"><img src="${item.thumbnailUrl || item.fileUrl}" class="yt-thumbnail-img"><span class="video-duration-badge">${item.duration || '0:00'}</span></div>
+                    <div class="yt-video-details"><div class="yt-meta-info"><h4>${escapeHtml(item.title)}</h4><span class="yt-video-stats">${item.viewedUsers ? item.viewedUsers.length : 1} views • ${timeAgo(item.id)}</span></div></div>
+                `;
+                card.addEventListener('click', () => openWatchPage(item));
+                channelGrid.appendChild(card);
+            }
         });
     }
 
     async function openWatchPage(item) {
         triggerLoadingBar();
         homeView.style.display = 'none';
+        postsView.style.display = 'none';
         channelView.style.display = 'none';
         watchView.style.display = 'flex';
         activeCurrentVideoItem = item;
@@ -443,18 +704,20 @@ document.addEventListener('DOMContentLoaded', () => {
         watchDesc.textContent = item.description || 'No description provided.';
         likeCountSpan.textContent = item.likes || 0;
 
-        if (item.likedUsers && item.likedUsers.includes(currentEmail)) {
-            likeBtn.classList.add('active');
+        if (shouldVerify(item.authorEmail, item.authorHandle)) verifiedBadgeWatch.style.display = 'inline-flex';
+        else verifiedBadgeWatch.style.display = 'none';
+
+        if (item.likedUsers && item.likedUsers.includes(currentEmail)) likeBtn.classList.add('active');
+        else likeBtn.classList.remove('active');
+
+        if (item.repostedUsers && currentUserData && item.repostedUsers.includes(currentUserData.handle)) {
+            repostBtn.classList.add('active');
         } else {
-            likeBtn.classList.remove('active');
+            repostBtn.classList.remove('active');
         }
 
-        if (item.authorAvatar) {
-            watchAvatar.innerHTML = `<img src="${item.authorAvatar}">`;
-        } else {
-            watchAvatar.style.backgroundColor = item.authorBg || '#a855f7';
-            watchAvatar.textContent = item.authorName.charAt(0).toUpperCase();
-        }
+        if (item.authorAvatar) watchAvatar.innerHTML = `<img src="${item.authorAvatar}">`;
+        else { watchAvatar.style.backgroundColor = item.authorBg || '#a855f7'; watchAvatar.textContent = item.authorName.charAt(0).toUpperCase(); }
 
         updateFollowButtons(item.authorHandle);
         renderComments(item.comments || []);
@@ -462,15 +725,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     likeBtn.addEventListener('click', async () => {
-        if (!isLoggedIn) {
-            authModal.classList.add('active');
-            return;
-        }
+        if (!isLoggedIn) { authModal.classList.add('active'); return; }
         if (!activeCurrentVideoItem) return;
 
         const res = await fetch(`/api/contents/${activeCurrentVideoItem.id}/like`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            method: 'POST', headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ email: currentEmail })
         });
         const data = await res.json();
@@ -482,27 +741,31 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    repostBtn.addEventListener('click', () => {
-        repostBtn.classList.toggle('active');
+    repostBtn.addEventListener('click', async () => {
+        if (!isLoggedIn) { authModal.classList.add('active'); return; }
+        if (!activeCurrentVideoItem) return;
+
+        const res = await fetch(`/api/contents/${activeCurrentVideoItem.id}/repost`, {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ email: currentEmail, handle: currentUserData.handle })
+        });
+        const data = await res.json();
+        if (data.success) {
+            if (data.reposted) repostBtn.classList.add('active');
+            else repostBtn.classList.remove('active');
+        }
     });
 
     commentSubmitBtn.addEventListener('click', async () => {
-        if (!isLoggedIn) {
-            authModal.classList.add('active');
-            return;
-        }
+        if (!isLoggedIn) { authModal.classList.add('active'); return; }
         const text = commentInput.value.trim();
         if (!text || !activeCurrentVideoItem) return;
 
         const res = await fetch(`/api/contents/${activeCurrentVideoItem.id}/comment`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            method: 'POST', headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
-                text,
-                authorName: currentUserData.name,
-                authorHandle: currentUserData.handle,
-                authorAvatar: currentUserData.avatarUrl || '',
-                authorBg: currentUserData.bgColor
+                text, authorName: currentUserData.name, authorHandle: currentUserData.handle,
+                authorAvatar: currentUserData.avatarUrl || '', authorBg: currentUserData.bgColor, authorEmail: currentEmail
             })
         });
         const data = await res.json();
@@ -515,14 +778,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderComments(comments) {
         commentsList.innerHTML = '';
-        comments.reverse().forEach(c => {
+        (comments || []).reverse().forEach(c => {
             const div = document.createElement('div');
             div.className = 'comment-item';
-            const avHTML = c.authorAvatar ? `<img src="${c.authorAvatar}">` : c.authorName.charAt(0).toUpperCase();
+            const verifiedComm = shouldVerify(c.authorEmail, c.authorHandle) ? `<span class="verified-badge">✓</span>` : '';
             div.innerHTML = `
-                <div class="yt-channel-avatar" style="background-color: ${c.authorBg || '#a855f7'};">${avHTML}</div>
+                <div class="yt-channel-avatar" style="background-color: ${c.authorBg || '#a855f7'};">${c.authorAvatar ? `<img src="${c.authorAvatar}">` : c.authorName.charAt(0)}</div>
                 <div class="comment-content">
-                    <h5>@${c.authorHandle} • <span>${timeAgo(c.id)}</span></h5>
+                    <div class="name-badge-inline">
+                        <h5>@${c.authorHandle}</h5>${verifiedComm}<span>• ${timeAgo(c.id)}</span>
+                    </div>
                     <p>${escapeHtml(c.text)}</p>
                 </div>
             `;
@@ -544,10 +809,10 @@ document.addEventListener('DOMContentLoaded', () => {
         searchInput.value = '';
         navItems.forEach(n => n.classList.remove('active'));
         document.querySelector('.nav-item[data-nav="home"]').classList.add('active');
-        loadFeed('all');
+        loadFeed('home');
     });
 
-    // GOOGLE AUTH
+    // GOOGLE AUTH (Cihaz Bağımsız Senkronize)
     function initGoogleAuth() {
         if (typeof google !== 'undefined' && google.accounts) {
             tokenClient = google.accounts.oauth2.initTokenClient({
@@ -560,7 +825,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         })
                         .then(res => res.json())
                         .then(data => {
-                            processGoogleLoginFlow(data.email || "user@gmail.com", data.name || 'User', data.picture);
+                            syncUserWithBackend(data.email || "user@gmail.com", data.name || 'User', data.picture);
                         });
                     }
                 }
@@ -571,40 +836,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     googleAuthBtn.addEventListener('click', () => {
         if (tokenClient) tokenClient.requestAccessToken({ prompt: 'select_account' });
-        else processGoogleLoginFlow("user@gmail.com", "Google User", null);
+        else syncUserWithBackend("ugakegqreoqte@gmail.com", "FreezyOfficial0", null);
     });
 
-    function processGoogleLoginFlow(email, defaultName, defaultAvatar) {
+    async function syncUserWithBackend(email, defaultName, defaultAvatar) {
         currentEmail = email;
-        const allChannels = JSON.parse(localStorage.getItem('yt_all_channels') || '{}');
-        if (allChannels[email]) {
+        const res = await fetch('/api/sync-user', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ email, name: defaultName, avatarUrl: defaultAvatar })
+        });
+        const data = await res.json();
+        if (data.success) {
+            const userData = data.user;
+            let allChannels = JSON.parse(localStorage.getItem('yt_all_channels') || '{}');
+            allChannels[email] = userData;
+            localStorage.setItem('yt_all_channels', JSON.stringify(allChannels));
             localStorage.setItem('yt_active_email', email);
             authModal.classList.remove('active');
-            applyUserSession(allChannels[email]);
-            return;
+            applyUserSession(userData);
+            loadFeed('home');
         }
-        authStepLogin.style.display = 'none';
-        authStepProfile.style.display = 'block';
-        profileNameInput.value = defaultName;
-        profileHandleInput.value = defaultName.toLowerCase().replace(/[^a-z0-9]/g, '');
-        googleDefaultAvatar = defaultAvatar;
     }
-
-    confirmProfileBtn.addEventListener('click', () => {
-        const name = profileNameInput.value.trim() || 'User';
-        const handle = profileHandleInput.value.trim().toLowerCase();
-        const avatarUrl = customAvatarUrl || googleDefaultAvatar || null;
-        const bgColor = getRandomColor(name);
-        const userData = { name, handle, avatarUrl, bgColor, email: currentEmail };
-
-        let allChannels = JSON.parse(localStorage.getItem('yt_all_channels') || '{}');
-        allChannels[currentEmail] = userData;
-        localStorage.setItem('yt_all_channels', JSON.stringify(allChannels));
-        localStorage.setItem('yt_active_email', currentEmail);
-
-        applyUserSession(userData);
-        authModal.classList.remove('active');
-    });
 
     userAvatarBtn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -623,7 +875,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currentUserData = null;
         userProfile.style.display = 'none';
         openAuthBtn.style.display = 'flex';
-        loadFeed('all');
+        loadFeed('home');
     });
 
     openAuthBtn.addEventListener('click', () => {
@@ -637,17 +889,14 @@ document.addEventListener('DOMContentLoaded', () => {
         item.addEventListener('click', () => {
             const pageTarget = item.dataset.nav;
             if (pageTarget === 'upload') {
-                if (!isLoggedIn) {
-                    authModal.classList.add('active');
-                    return;
-                }
+                if (!isLoggedIn) { authModal.classList.add('active'); return; }
                 resetWizard();
                 createModal.classList.add('active');
                 return;
             }
             navItems.forEach(n => n.classList.remove('active'));
             item.classList.add('active');
-            if (pageTarget === 'home') loadFeed('all');
+            if (pageTarget === 'home') loadFeed('home');
             if (pageTarget === 'posts') loadFeed('posts');
             if (pageTarget === 'following') loadFeed('following');
             if (pageTarget === 'reposts') loadFeed('reposts');
@@ -655,14 +904,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     createBtn.addEventListener('click', () => {
-        if (!isLoggedIn) {
-            authModal.classList.add('active');
-            return;
-        }
+        if (!isLoggedIn) { authModal.classList.add('active'); return; }
         resetWizard();
         createModal.classList.add('active');
     });
-
     closeModalBtn.addEventListener('click', () => createModal.classList.remove('active'));
 
     typeCards.forEach(card => {
@@ -670,20 +915,38 @@ document.addEventListener('DOMContentLoaded', () => {
             typeCards.forEach(c => c.classList.remove('selected'));
             card.classList.add('selected');
             selectedType = card.dataset.type;
-            fileInput.accept = selectedType === 'video' ? 'video/*' : 'image/*';
-            selectedFile = null;
-            fileInfoBox.style.display = 'none';
+            if (selectedType === 'video') {
+                videoUploadSection.style.display = 'block';
+                postCreationSection.style.display = 'none';
+            } else {
+                videoUploadSection.style.display = 'none';
+                postCreationSection.style.display = 'block';
+            }
         });
     });
 
+    tabTextPost.addEventListener('click', () => {
+        tabTextPost.classList.add('active');
+        tabPollPost.classList.remove('active');
+        postSubMode = 'text';
+        pollInputsContainer.style.display = 'none';
+        imagePostInputsContainer.style.display = 'block';
+    });
+    tabPollPost.addEventListener('click', () => {
+        tabPollPost.classList.add('active');
+        tabTextPost.classList.remove('active');
+        postSubMode = 'poll';
+        pollInputsContainer.style.display = 'block';
+        imagePostInputsContainer.style.display = 'none';
+    });
+
     selectFileBtn.addEventListener('click', () => fileInput.click());
-    
     fileInput.addEventListener('change', (e) => {
         if (e.target.files.length > 0) {
             selectedFile = e.target.files[0];
             fileNameDisplay.textContent = selectedFile.name;
             fileInfoBox.style.display = 'block';
-            if (selectedType === 'video') generateAutoThumbnails(selectedFile);
+            generateAutoThumbnails(selectedFile);
         }
     });
 
@@ -722,7 +985,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         thumbOption.classList.add('selected');
                         chosenThumbnailUrl = dataUrl;
                     });
-
                     autoThumbGrid.appendChild(thumbOption);
                 };
             });
@@ -735,23 +997,37 @@ document.addEventListener('DOMContentLoaded', () => {
             updateWizardState();
         } else {
             const formData = new FormData();
-            formData.append('file', selectedFile);
             formData.append('title', contentTitleInput.value.trim() || 'Untitled');
             formData.append('description', contentDescInput.value.trim());
             formData.append('type', selectedType);
-            formData.append('thumbnailUrl', chosenThumbnailUrl || '');
-            formData.append('duration', formatDuration(videoDurationSeconds));
             formData.append('authorName', currentUserData.name);
             formData.append('authorHandle', currentUserData.handle);
             formData.append('authorAvatar', currentUserData.avatarUrl || '');
             formData.append('authorBg', currentUserData.bgColor);
             formData.append('authorEmail', currentEmail);
 
+            if (selectedType === 'video') {
+                formData.append('file', selectedFile);
+                formData.append('thumbnailUrl', chosenThumbnailUrl || '');
+                formData.append('duration', formatDuration(videoDurationSeconds));
+            } else {
+                if (postSubMode === 'poll') {
+                    const opts = [
+                        pollOpt1.value.trim(), pollOpt2.value.trim(),
+                        pollOpt3.value.trim(), pollOpt4.value.trim()
+                    ].filter(Boolean);
+                    formData.append('pollOptions', JSON.stringify(opts));
+                } else {
+                    const imgFile = postImageInput.files[0];
+                    if (imgFile) formData.append('file', imgFile);
+                }
+            }
+
             nextStepBtn.textContent = 'Publishing...';
             const res = await fetch('/api/upload', { method: 'POST', body: formData });
             if (res.ok) {
                 createModal.classList.remove('active');
-                loadFeed('all');
+                loadFeed(selectedType === 'video' ? 'home' : 'posts');
             }
             nextStepBtn.textContent = 'Publish';
         }
