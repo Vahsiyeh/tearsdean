@@ -1,6 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
     const GOOGLE_CLIENT_ID = "736819800954-ufc0h3143np8u87ji87ctidcrq8pk0kc.apps.googleusercontent.com";
-    const takenHandles = ['tearsdean', 'youtube', 'admin', 'roblox', 'developer', 'garda'];
 
     const createBtn = document.getElementById('createBtn');
     const createModal = document.getElementById('createModal');
@@ -15,8 +14,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const selectFileBtn = document.getElementById('selectFileBtn');
     const fileNameDisplay = document.getElementById('fileName');
     const fileInfoBox = document.getElementById('fileInfo');
-    const dropzone = document.getElementById('dropzone');
-    const uploadText = document.getElementById('uploadText');
     const contentTitleInput = document.getElementById('contentTitle');
     const contentDescInput = document.getElementById('contentDesc');
     const autoThumbGrid = document.getElementById('autoThumbGrid');
@@ -33,7 +30,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('searchInput');
     const searchSubmitBtn = document.getElementById('searchSubmitBtn');
     const topLoadingBar = document.getElementById('topLoadingBar');
-    const toastNotification = document.getElementById('toastNotification');
 
     const mainVideoPlayer = document.getElementById('mainVideoPlayer');
     const videoContainer = document.getElementById('videoContainer');
@@ -117,12 +113,6 @@ document.addEventListener('DOMContentLoaded', () => {
         let hash = 0;
         for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
         return googleAvatarColors[Math.abs(hash) % googleAvatarColors.length];
-    }
-
-    function showToast(msg) {
-        toastNotification.textContent = msg;
-        toastNotification.classList.add('active');
-        setTimeout(() => toastNotification.classList.remove('active'), 2500);
     }
 
     function triggerLoadingBar() {
@@ -249,50 +239,58 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // ABONELİK KONTROLÜ
-    function isSubscribed(handle) {
-        const subs = JSON.parse(localStorage.getItem('yt_subs_' + (currentUserData ? currentUserData.handle : 'guest')) || '[]');
+    // FOLLOW / UNFOLLOW SİSTEMİ (BİLDİRİMSİZ)
+    function isFollowing(handle) {
+        if (!currentUserData) return false;
+        const subs = JSON.parse(localStorage.getItem('yt_subs_' + currentUserData.handle) || '[]');
         return subs.includes(handle);
     }
 
-    function toggleSubscribe(handle) {
+    function toggleFollow(handle) {
         if (!isLoggedIn) {
             authModal.classList.add('active');
             return;
         }
+        if (currentUserData && currentUserData.handle === handle) return; // Kendi kanalına takip engeli
+
         const key = 'yt_subs_' + currentUserData.handle;
         let subs = JSON.parse(localStorage.getItem(key) || '[]');
         const idx = subs.indexOf(handle);
         if (idx > -1) {
             subs.splice(idx, 1);
-            showToast("Unsubscribed");
         } else {
             subs.push(handle);
-            showToast("Subscribed!");
         }
         localStorage.setItem(key, JSON.stringify(subs));
-        updateSubscribeButtons(handle);
+        updateFollowButtons(handle);
     }
 
-    function updateSubscribeButtons(handle) {
-        const subbed = isSubscribed(handle);
+    function updateFollowButtons(handle) {
+        const isSelf = currentUserData && currentUserData.handle === handle;
+        
         [watchSubscribeBtn, subscribeMainBtn].forEach(btn => {
             if (!btn) return;
-            if (subbed) {
-                btn.textContent = 'Subscribed';
+            if (isSelf) {
+                btn.style.display = 'none'; // Kendi kanalındaysa butonu gizle
+                return;
+            }
+            btn.style.display = 'block';
+            const following = isFollowing(handle);
+            if (following) {
+                btn.textContent = 'Following';
                 btn.classList.add('subscribed');
             } else {
-                btn.textContent = 'Subscribe';
+                btn.textContent = 'Follow';
                 btn.classList.remove('subscribed');
             }
         });
     }
 
     watchSubscribeBtn.addEventListener('click', () => {
-        if (activeCurrentVideoItem) toggleSubscribe(activeCurrentVideoItem.authorHandle);
+        if (activeCurrentVideoItem) toggleFollow(activeCurrentVideoItem.authorHandle);
     });
     subscribeMainBtn.addEventListener('click', () => {
-        if (currentViewingChannelHandle) toggleSubscribe(currentViewingChannelHandle);
+        if (currentViewingChannelHandle) toggleFollow(currentViewingChannelHandle);
     });
 
     // FEED YÜKLEME
@@ -309,8 +307,18 @@ document.addEventListener('DOMContentLoaded', () => {
             feedGrid.innerHTML = '';
 
             let filtered = allContents;
-            if (filterType === 'posts') filtered = allContents.filter(c => c.type === 'post');
-            else if (filterType === 'videos') filtered = allContents.filter(c => c.type === 'video');
+            if (filterType === 'posts') {
+                filtered = allContents.filter(c => c.type === 'post');
+            } else if (filterType === 'following') {
+                if (isLoggedIn && currentUserData) {
+                    const subs = JSON.parse(localStorage.getItem('yt_subs_' + currentUserData.handle) || '[]');
+                    filtered = allContents.filter(c => subs.includes(c.authorHandle));
+                } else {
+                    filtered = [];
+                }
+            } else if (filterType === 'reposts') {
+                filtered = []; // Repost listesi
+            }
 
             if (searchQuery.trim() !== '') {
                 const q = searchQuery.toLowerCase().trim();
@@ -387,7 +395,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 channelBigAvatar.textContent = ch.authorName.charAt(0).toUpperCase();
             }
         }
-        updateSubscribeButtons(handle);
+        updateFollowButtons(handle);
 
         channelGrid.innerHTML = '';
         if (channelContents.length === 0) {
@@ -448,7 +456,7 @@ document.addEventListener('DOMContentLoaded', () => {
             watchAvatar.textContent = item.authorName.charAt(0).toUpperCase();
         }
 
-        updateSubscribeButtons(item.authorHandle);
+        updateFollowButtons(item.authorHandle);
         renderComments(item.comments || []);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -476,7 +484,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     repostBtn.addEventListener('click', () => {
         repostBtn.classList.toggle('active');
-        showToast(repostBtn.classList.contains('active') ? "Reposted to your profile!" : "Repost removed.");
     });
 
     commentSubmitBtn.addEventListener('click', async () => {
@@ -642,6 +649,8 @@ document.addEventListener('DOMContentLoaded', () => {
             item.classList.add('active');
             if (pageTarget === 'home') loadFeed('all');
             if (pageTarget === 'posts') loadFeed('posts');
+            if (pageTarget === 'following') loadFeed('following');
+            if (pageTarget === 'reposts') loadFeed('reposts');
         });
     });
 
@@ -695,7 +704,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const timeStamps = [tempVid.duration * 0.1, tempVid.duration * 0.4, tempVid.duration * 0.7];
             autoThumbGrid.innerHTML = '';
-            let count = 0;
 
             timeStamps.forEach((t, idx) => {
                 tempVid.currentTime = Math.max(0.1, t);
@@ -716,7 +724,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
 
                     autoThumbGrid.appendChild(thumbOption);
-                    count++;
                 };
             });
         };
@@ -745,7 +752,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (res.ok) {
                 createModal.classList.remove('active');
                 loadFeed('all');
-                showToast("Content published globally!");
             }
             nextStepBtn.textContent = 'Publish';
         }
