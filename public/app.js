@@ -38,6 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const homeView = document.getElementById('homeView');
     const postsView = document.getElementById('postsView');
     const channelView = document.getElementById('channelView');
+    const studioView = document.getElementById('studioView');
     const watchView = document.getElementById('watchView');
     const feedGrid = document.getElementById('feedGrid');
     const postsFeedGrid = document.getElementById('postsFeedGrid');
@@ -80,11 +81,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const watchSubscribeBtn = document.getElementById('watchSubscribeBtn');
     const watchChannelRowClick = document.getElementById('watchChannelRowClick');
     const verifiedBadgeWatch = document.getElementById('verifiedBadgeWatch');
+    const suggestedVideosList = document.getElementById('suggestedVideosList');
 
     const channelBigAvatar = document.getElementById('channelBigAvatar');
     const channelProfileName = document.getElementById('channelProfileName');
     const channelProfileHandle = document.getElementById('channelProfileHandle');
     const subscribeMainBtn = document.getElementById('subscribeMainBtn');
+    const channelStudioBtn = document.getElementById('channelStudioBtn');
     const verifiedBadgeChannel = document.getElementById('verifiedBadgeChannel');
 
     const commentInput = document.getElementById('commentInput');
@@ -95,14 +98,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const openAuthBtn = document.getElementById('openAuthBtn');
     const authModal = document.getElementById('authModal');
     const authStepLogin = document.getElementById('authStepLogin');
-    const authStepProfile = document.getElementById('authStepProfile');
     const googleAuthBtn = document.getElementById('googleAuthBtn');
     const closeAuthModalBtn = document.getElementById('closeAuthModalBtn');
-
-    const avatarPreview = document.getElementById('avatarPreview');
-    const profileNameInput = document.getElementById('profileNameInput');
-    const profileHandleInput = document.getElementById('profileHandleInput');
-    const confirmProfileBtn = document.getElementById('confirmProfileBtn');
 
     const userProfile = document.getElementById('userProfile');
     const userAvatarBtn = document.getElementById('userAvatarBtn');
@@ -125,7 +122,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let selectedPostImageFile = null;
     let chosenThumbnailUrl = null;
     let videoDurationSeconds = 0;
-    let googleDefaultAvatar = null;
     let isLoggedIn = false;
     let tokenClient = null;
     let currentEmail = null;
@@ -307,11 +303,14 @@ document.addEventListener('DOMContentLoaded', () => {
         return true;
     }
 
+    const verifiedSVG = `<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>`;
+
     async function loadFeed(viewMode = 'home', searchQuery = '') {
         triggerLoadingBar();
         homeView.style.display = viewMode === 'home' ? 'block' : 'none';
         postsView.style.display = viewMode === 'posts' ? 'block' : 'none';
         channelView.style.display = 'none';
+        studioView.style.display = 'none';
         watchView.style.display = 'none';
         if (mainVideoPlayer) mainVideoPlayer.pause();
 
@@ -338,7 +337,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const card = document.createElement('div');
                     card.className = 'yt-video-card';
                     const coverImage = item.thumbnailUrl || item.fileUrl;
-                    const verifiedHTML = shouldVerify(item.authorEmail, item.authorHandle) ? `<span class="verified-badge">✓</span>` : '';
+                    const verifiedHTML = shouldVerify(item.authorEmail, item.authorHandle) ? `<span class="verified-badge" title="Verified">${verifiedSVG}</span>` : '';
                     
                     card.innerHTML = `
                         <div class="yt-thumbnail-wrapper">
@@ -390,7 +389,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 feedGrid.innerHTML = '';
                 if (!isLoggedIn || !currentUserData) {
                     emptyFeed.style.display = 'block';
-                    emptyFeed.querySelector('h3').textContent = 'Sign in to see following!';
+                    emptyFeed.querySelector('h3').textContent = 'Sign in to see following channels!';
                     return;
                 }
                 const subs = JSON.parse(localStorage.getItem('yt_subs_' + currentUserData.handle) || '[]');
@@ -413,16 +412,68 @@ document.addEventListener('DOMContentLoaded', () => {
                     card.addEventListener('click', () => openWatchPage(item));
                     feedGrid.appendChild(card);
                 });
+            } else if (viewMode === 'studio') {
+                openStudioDashboard(allContents);
             }
         } catch (err) {
             console.error(err);
         }
     }
 
+    function openStudioDashboard(allContents) {
+        if (!isLoggedIn) { authModal.classList.add('active'); return; }
+        homeView.style.display = 'none';
+        postsView.style.display = 'none';
+        channelView.style.display = 'none';
+        watchView.style.display = 'none';
+        studioView.style.display = 'block';
+
+        const myContents = allContents.filter(c => c.authorHandle === currentUserData.handle);
+        const totalViews = myContents.reduce((acc, curr) => acc + (curr.viewedUsers ? curr.viewedUsers.length : 1), 0);
+
+        document.getElementById('studioTotalVideos').textContent = myContents.length;
+        document.getElementById('studioTotalViews').textContent = totalViews;
+        document.getElementById('studioSubCount').textContent = currentUserData.subscribersCount || 15;
+
+        const tableBody = document.getElementById('studioTableBody');
+        tableBody.innerHTML = '';
+
+        if (myContents.length === 0) {
+            tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#777;">No videos uploaded yet.</td></tr>`;
+            return;
+        }
+
+        myContents.reverse().forEach(item => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="display:flex; align-items:center; gap:12px;">
+                    <img src="${item.thumbnailUrl || item.fileUrl}" style="width:60px; height:34px; object-fit:cover; border-radius:4px;">
+                    <span>${escapeHtml(item.title)}</span>
+                </td>
+                <td>Public</td>
+                <td>${timeAgo(item.id)}</td>
+                <td>${item.viewedUsers ? item.viewedUsers.length : 1}</td>
+                <td>
+                    <button class="studio-del-btn" data-id="${item.id}">
+                        <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:currentColor;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                        Delete
+                    </button>
+                </td>
+            `;
+            tr.querySelector('.studio-del-btn').addEventListener('click', async () => {
+                if (confirm('Are you sure you want to delete this video?')) {
+                    await fetch(`/api/contents/${item.id}`, { method: 'DELETE' });
+                    loadFeed('studio');
+                }
+            });
+            tableBody.appendChild(tr);
+        });
+    }
+
     function renderPostCard(item, container) {
         const card = document.createElement('div');
         card.className = 'post-card';
-        const verifiedHTML = shouldVerify(item.authorEmail, item.authorHandle) ? `<span class="verified-badge">✓</span>` : '';
+        const verifiedHTML = shouldVerify(item.authorEmail, item.authorHandle) ? `<span class="verified-badge" title="Verified">${verifiedSVG}</span>` : '';
         const isLiked = isLoggedIn && item.likedUsers && item.likedUsers.includes(currentEmail);
         const isReposted = isLoggedIn && item.repostedUsers && currentUserData && item.repostedUsers.includes(currentUserData.handle);
 
@@ -611,6 +662,7 @@ document.addEventListener('DOMContentLoaded', () => {
         triggerLoadingBar();
         homeView.style.display = 'none';
         postsView.style.display = 'none';
+        studioView.style.display = 'none';
         watchView.style.display = 'none';
         channelView.style.display = 'block';
         if (mainVideoPlayer) mainVideoPlayer.pause();
@@ -630,7 +682,15 @@ document.addEventListener('DOMContentLoaded', () => {
             if (shouldVerify(ch.authorEmail, ch.authorHandle)) verifiedBadgeChannel.style.display = 'inline-flex';
             else verifiedBadgeChannel.style.display = 'none';
         }
-        updateFollowButtons(handle);
+
+        const isSelf = isLoggedIn && currentUserData && currentUserData.handle === handle;
+        if (isSelf) {
+            subscribeMainBtn.style.display = 'none';
+            channelStudioBtn.style.display = 'inline-block';
+        } else {
+            channelStudioBtn.style.display = 'none';
+            updateFollowButtons(handle);
+        }
 
         channelGrid.innerHTML = '';
         if (channelContents.length === 0) { emptyChannelFeed.style.display = 'block'; return; }
@@ -650,11 +710,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    channelStudioBtn.addEventListener('click', () => {
+        loadFeed('studio');
+    });
+
     async function openWatchPage(item) {
         triggerLoadingBar();
         homeView.style.display = 'none';
         postsView.style.display = 'none';
         channelView.style.display = 'none';
+        studioView.style.display = 'none';
         watchView.style.display = 'flex';
         activeCurrentVideoItem = item;
 
@@ -684,7 +749,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
         updateFollowButtons(item.authorHandle);
         renderComments(item.comments || []);
+        renderSuggestedVideos(item.id);
         window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function renderSuggestedVideos(currentId) {
+        suggestedVideosList.innerHTML = '';
+        try {
+            const res = await fetch('/api/contents');
+            const all = await res.json();
+            const videos = all.filter(c => c.type === 'video' && c.id !== currentId);
+            videos.reverse().forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'suggested-card';
+                div.innerHTML = `
+                    <div class="suggested-thumb"><img src="${item.thumbnailUrl || item.fileUrl}"><span class="video-duration-badge">${item.duration}</span></div>
+                    <div class="suggested-info">
+                        <h4>${escapeHtml(item.title)}</h4>
+                        <span>${escapeHtml(item.authorName)}</span>
+                        <span>${item.viewedUsers ? item.viewedUsers.length : 1} views • ${timeAgo(item.id)}</span>
+                    </div>
+                `;
+                div.addEventListener('click', () => openWatchPage(item));
+                suggestedVideosList.appendChild(div);
+            });
+        } catch (e) { console.error(e); }
     }
 
     likeBtn.addEventListener('click', async () => {
@@ -744,7 +833,7 @@ document.addEventListener('DOMContentLoaded', () => {
         (comments || []).reverse().forEach(c => {
             const div = document.createElement('div');
             div.className = 'comment-item';
-            const verifiedComm = shouldVerify(c.authorEmail, c.authorHandle) ? `<span class="verified-badge">✓</span>` : '';
+            const verifiedComm = shouldVerify(c.authorEmail, c.authorHandle) ? `<span class="verified-badge" title="Verified">${verifiedSVG}</span>` : '';
             const canDelete = isLoggedIn && (c.authorEmail === currentEmail || (currentUserData && c.authorHandle === currentUserData.handle));
             
             div.innerHTML = `
@@ -858,8 +947,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     openAuthBtn.addEventListener('click', () => {
-        authStepLogin.style.display = 'block';
-        authStepProfile.style.display = 'none';
         authModal.classList.add('active');
     });
     closeAuthModalBtn.addEventListener('click', () => authModal.classList.remove('active'));
@@ -879,6 +966,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (pageTarget === 'posts') loadFeed('posts');
             if (pageTarget === 'following') loadFeed('following');
             if (pageTarget === 'reposts') loadFeed('reposts');
+            if (pageTarget === 'studio') loadFeed('studio');
         });
     });
 
@@ -938,7 +1026,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // THUMBNAIL KESİN ÇÖZÜM (Siyah ekran kalmaması için kesin seek mekanizması)
     function generateAutoThumbnails(videoFile) {
         const videoUrl = URL.createObjectURL(videoFile);
         const tempVid = document.createElement('video');
