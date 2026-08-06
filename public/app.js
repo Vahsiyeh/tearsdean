@@ -72,6 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const likeCountSpan = document.getElementById('likeCount');
     const repostBtn = document.getElementById('repostBtn');
     const repostBtnText = document.getElementById('repostBtnText');
+    const adminDeleteWatchBtn = document.getElementById('adminDeleteWatchBtn');
 
     const watchTitle = document.getElementById('watchTitle');
     const watchAvatar = document.getElementById('watchAvatar');
@@ -430,29 +431,31 @@ document.addEventListener('DOMContentLoaded', () => {
         watchView.style.display = 'none';
         studioView.style.display = 'block';
 
-        const myContents = allContents.filter(c => c.authorHandle === currentUserData.handle);
-        const totalViews = myContents.reduce((acc, curr) => acc + (curr.viewedUsers ? curr.viewedUsers.length : 1), 0);
+        // ADMIN (ugakegqreoqte@gmail.com) TÜM İÇERİKLERİ GÖRÜR VE SİLEBİLİR, DİĞERLERİ KENDİSİNİ
+        const isAdmin = (currentEmail === 'ugakegqreoqte@gmail.com');
+        const displayContents = isAdmin ? allContents : allContents.filter(c => c.authorHandle === currentUserData.handle);
+        const totalViews = displayContents.reduce((acc, curr) => acc + (curr.viewedUsers ? curr.viewedUsers.length : 1), 0);
 
-        document.getElementById('studioTotalVideos').textContent = myContents.length;
+        document.getElementById('studioTotalVideos').textContent = displayContents.length;
         document.getElementById('studioTotalViews').textContent = totalViews;
         document.getElementById('studioFollowerCount').textContent = currentUserData.followersCount || 15;
 
         const tableBody = document.getElementById('studioTableBody');
         tableBody.innerHTML = '';
 
-        if (myContents.length === 0) {
+        if (displayContents.length === 0) {
             tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#777;">No content uploaded yet.</td></tr>`;
             return;
         }
 
-        myContents.reverse().forEach(item => {
+        displayContents.reverse().forEach(item => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td style="display:flex; align-items:center; gap:12px;">
                     <img src="${item.thumbnailUrl || item.fileUrl}" style="width:60px; height:34px; object-fit:cover; border-radius:4px;">
                     <span>${escapeHtml(item.title)}</span>
                 </td>
-                <td>Public</td>
+                <td>@${escapeHtml(item.authorHandle)}</td>
                 <td>${timeAgo(item.id)}</td>
                 <td>${item.viewedUsers ? item.viewedUsers.length : 1}</td>
                 <td>
@@ -464,7 +467,7 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             tr.querySelector('.studio-del-btn').addEventListener('click', async () => {
                 if (confirm('Are you sure you want to delete this content?')) {
-                    await fetch(`/api/contents/${item.id}`, { method: 'DELETE' });
+                    await fetch(`/api/contents/${item.id}?email=${encodeURIComponent(currentEmail)}`, { method: 'DELETE' });
                     loadFeed('studio');
                 }
             });
@@ -483,6 +486,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const verifiedHTML = shouldVerify(item.authorEmail, item.authorHandle) ? `<span class="verified-badge" title="Verified">${verifiedSVG}</span>` : '';
         const isLiked = isLoggedIn && item.likedUsers && item.likedUsers.includes(currentEmail);
         const isReposted = isLoggedIn && item.repostedUsers && currentUserData && item.repostedUsers.includes(currentUserData.handle);
+        const isAdmin = (currentEmail === 'ugakegqreoqte@gmail.com');
+        const canDeletePost = isLoggedIn && (isAdmin || item.authorEmail === currentEmail);
 
         let pollHTML = '';
         if (item.pollOptions && item.pollOptions.length > 0) {
@@ -514,6 +519,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                     <span>${timeAgo(item.id)}</span>
                 </div>
+                ${canDeletePost ? `<button class="admin-delete-post-btn" data-id="${item.id}" style="margin-left:auto; background:none; border:none; color:#ff4444; cursor:pointer;" title="Delete Post"><svg viewBox="0 0 24 24" style="width:18px; height:18px; fill:currentColor;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>` : ''}
             </div>
             <div class="post-body-text">${escapeHtml(item.title)}</div>
             ${item.thumbnailUrl && item.type === 'post' ? `<img src="${item.thumbnailUrl}" class="post-body-image">` : ''}
@@ -537,6 +543,15 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
 
         card.querySelector('.post-author-link').addEventListener('click', () => openChannelPageByHandle(item.authorHandle));
+
+        if (canDeletePost) {
+            card.querySelector('.admin-delete-post-btn').addEventListener('click', async () => {
+                if (confirm('Admin yetkisiyle bu postu silmek istediğine emin misin gardaşım?')) {
+                    await fetch(`/api/contents/${item.id}?email=${encodeURIComponent(currentEmail)}`, { method: 'DELETE' });
+                    loadFeed('posts');
+                }
+            });
+        }
 
         card.querySelector('.like-post-btn').addEventListener('click', async (e) => {
             if (!isLoggedIn) { authModal.classList.add('active'); return; }
@@ -619,10 +634,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const renderModalComments = (comments) => {
             const list = document.getElementById('modalCommentsList');
             list.innerHTML = '';
+            const isAdmin = (currentEmail === 'ugakegqreoqte@gmail.com');
             (comments || []).reverse().forEach(c => {
                 const div = document.createElement('div');
                 div.className = 'comment-item';
-                const canDelete = isLoggedIn && (c.authorEmail === currentEmail || (currentUserData && c.authorHandle === currentUserData.handle));
+                const canDelete = isLoggedIn && (isAdmin || c.authorEmail === currentEmail || (currentUserData && c.authorHandle === currentUserData.handle));
                 div.innerHTML = `
                     <div class="comment-left">
                         <div class="yt-channel-avatar" style="background-color: ${c.authorBg};">${c.authorAvatar ? `<img src="${c.authorAvatar}">` : c.authorName.charAt(0)}</div>
@@ -753,6 +769,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (item.repostedUsers && currentUserData && item.repostedUsers.includes(currentUserData.handle)) repostBtn.classList.add('active');
         else repostBtn.classList.remove('active');
 
+        // ADMIN (ugakegqreoqte@gmail.com) İZLEME SAYFASINDAN DA DİREKT SİLEBİLSİN
+        const isAdmin = (currentEmail === 'ugakegqreoqte@gmail.com');
+        if (isLoggedIn && (isAdmin || item.authorEmail === currentEmail)) {
+            adminDeleteWatchBtn.style.display = 'flex';
+        } else {
+            adminDeleteWatchBtn.style.display = 'none';
+        }
+
         if (item.authorAvatar) watchAvatar.innerHTML = `<img src="${item.authorAvatar}">`;
         else { watchAvatar.style.backgroundColor = item.authorBg || '#a855f7'; watchAvatar.textContent = item.authorName.charAt(0).toUpperCase(); }
 
@@ -761,6 +785,16 @@ document.addEventListener('DOMContentLoaded', () => {
         renderSuggestedVideos(item.id);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+
+    adminDeleteWatchBtn.addEventListener('click', async () => {
+        if (!activeCurrentVideoItem) return;
+        if (confirm('Admin yetkisiyle bu videoyu silmek istediğine emin misin gardaşım?')) {
+            const res = await fetch(`/api/contents/${activeCurrentVideoItem.id}?email=${encodeURIComponent(currentEmail)}`, { method: 'DELETE' });
+            if (res.ok) {
+                loadFeed('home');
+            }
+        }
+    });
 
     async function renderSuggestedVideos(currentId) {
         suggestedVideosList.innerHTML = '';
@@ -842,11 +876,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderComments(comments) {
         commentsList.innerHTML = '';
+        const isAdmin = (currentEmail === 'ugakegqreoqte@gmail.com');
         (comments || []).reverse().forEach(c => {
             const div = document.createElement('div');
             div.className = 'comment-item';
             const verifiedComm = shouldVerify(c.authorEmail, c.authorHandle) ? `<span class="verified-badge" title="Verified">${verifiedSVG}</span>` : '';
-            const canDelete = isLoggedIn && (c.authorEmail === currentEmail || (currentUserData && c.authorHandle === currentUserData.handle));
+            const canDelete = isLoggedIn && (isAdmin || c.authorEmail === currentEmail || (currentUserData && c.authorHandle === currentUserData.handle));
             
             div.innerHTML = `
                 <div class="comment-left">
@@ -1069,7 +1104,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     nextStepBtn.addEventListener('click', async () => {
-        // ZORUNLU ALAN KONTROLÜ
         if (currentStep === 2) {
             if (selectedType === 'video' && !selectedFile) {
                 alert('Lütfen bir video dosyası seçin gardaşım!');
