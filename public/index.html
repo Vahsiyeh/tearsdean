@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YT Clone - YouTube Tarzı</title>
+    <title>YT Clone - Studio & Suggested Videos</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
@@ -100,6 +100,11 @@
                     <svg viewBox="0 0 24 24" class="nav-icon icon-filled"><path fill="currentColor" d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>
                     <span>Reposts</span>
                 </li>
+                <li class="nav-item" data-nav="studio">
+                    <svg viewBox="0 0 24 24" class="nav-icon icon-outline"><path fill="currentColor" d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12zM5 10h9v2H5zm0-3h9v2H5zm0 6h6v2H5zm11 0h2v2h-2zm0-3h2v2h-2zm0-3h2v2h-2z"/></svg>
+                    <svg viewBox="0 0 24 24" class="nav-icon icon-filled"><path fill="currentColor" d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z"/></svg>
+                    <span>Studio</span>
+                </li>
             </ul>
         </aside>
 
@@ -125,10 +130,15 @@
                     <div class="channel-profile-info">
                         <div class="channel-name-row">
                             <h2 id="channelProfileName">Channel Name</h2>
-                            <span id="verifiedBadgeChannel" class="verified-badge" style="display:none;" title="Verified">✓</span>
+                            <span id="verifiedBadgeChannel" class="verified-badge" style="display:none;" title="Verified">
+                                <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                            </span>
                         </div>
                         <span id="channelProfileHandle">@handle</span>
-                        <button class="subscribe-main-btn" id="subscribeMainBtn">Follow</button>
+                        <div class="channel-action-buttons">
+                            <button class="subscribe-main-btn" id="subscribeMainBtn">Follow</button>
+                            <button class="studio-redirect-btn" id="channelStudioBtn" style="display: none;">Customize channel</button>
+                        </div>
                     </div>
                 </div>
                 <div class="feed-grid" id="channelGrid"></div>
@@ -137,103 +147,135 @@
                 </div>
             </div>
 
-            <!-- WATCH VIEW (YouTube Orijinal Oynatıcı Kontrolleri) -->
-            <div id="watchView" class="watch-page-container" style="display: none;">
-                <div class="watch-main-column">
-                    <div class="custom-video-container" id="videoContainer">
-                        <video id="mainVideoPlayer" class="watch-video"></video>
-                        <div class="yt-player-controls">
-                            <div class="progress-bar-container" id="progressBarContainer">
-                                <div class="progress-bar-loaded" id="progressBarLoaded"></div>
-                                <div class="progress-bar-played" id="progressBarPlayed"></div>
-                                <div class="progress-bar-handle" id="progressBarHandle"></div>
-                            </div>
-                            <div class="ctrl-row">
-                                <div class="controls-left">
-                                    <button class="ctrl-btn" id="playPauseBtn" title="Play (k)">
-                                        <svg viewBox="0 0 24 24" id="playIcon"><path fill="currentColor" d="M8 5v14l11-7z"/></svg>
-                                        <svg viewBox="0 0 24 24" id="pauseIcon" style="display:none;"><path fill="currentColor" d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-                                    </button>
-                                    <button class="ctrl-btn" id="nextVideoBtn" title="Next (SHIFT+n)">
-                                        <svg viewBox="0 0 24 24"><path fill="currentColor" d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
-                                    </button>
-                                    <button class="ctrl-btn" id="muteBtn" title="Mute (m)">
-                                        <svg viewBox="0 0 24 24" id="volumeIcon"><path fill="currentColor" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
-                                        <svg viewBox="0 0 24 24" id="muteIcon" style="display:none;"><path fill="currentColor" d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C22.63 14.85 23 13.47 23 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
-                                    </button>
-                                    <input type="range" id="volumeSlider" min="0" max="1" step="0.05" value="1" class="volume-slider">
-                                    <span class="time-display" id="timeDisplay">0:00 / 0:00</span>
-                                </div>
-                                <div class="controls-right">
-                                    <button class="ctrl-btn" title="Autoplay">
-                                        <svg viewBox="0 0 24 24"><path fill="currentColor" d="M29 13H7v-2h22V13z"/></svg>
-                                    </button>
-                                    <button class="ctrl-btn" title="Subtitles">
-                                        <svg viewBox="0 0 24 24"><path fill="currentColor" d="M19 4H5c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-8 7H7v2h4v-2zm6 4H7v2h10v-2zm0-4h-4v2h4v-2z"/></svg>
-                                    </button>
-                                    <button class="ctrl-btn" title="Settings">
-                                        <svg viewBox="0 0 24 24"><path fill="currentColor" d="M19.43 12.98c.04-.32.07-.64.07-.98 0-.34-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.03 2.18 13.82 2 13.6 2h-4c-.22 0-.43.18-.46.4l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98 0 .33.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.22.24.4.46.4h4c.22 0 .43-.18.46-.4l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
-                                    </button>
-                                    <button class="ctrl-btn" title="Miniplayer">
-                                        <svg viewBox="0 0 24 24"><path fill="currentColor" d="M19 7h-8v6h8V7zm2-4H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14z"/></svg>
-                                    </button>
-                                    <button class="ctrl-btn" id="fullscreenBtn" title="Full screen (f)">
-                                        <svg viewBox="0 0 24 24"><path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+            <!-- STUDIO VIEW -->
+            <div id="studioView" style="display: none;">
+                <div class="studio-header">
+                    <h2>YouTube Studio Dashboard</h2>
+                    <p>Manage your channel content, analytics, and settings.</p>
+                </div>
+                <div class="studio-stats-cards">
+                    <div class="studio-card">
+                        <h4>Total Videos</h4>
+                        <span id="studioTotalVideos">0</span>
                     </div>
+                    <div class="studio-card">
+                        <h4>Total Views</h4>
+                        <span id="studioTotalViews">0</span>
+                    </div>
+                    <div class="studio-card">
+                        <h4>Subscribers</h4>
+                        <span id="studioSubCount">15</span>
+                    </div>
+                </div>
+                <h3 class="studio-section-title">Channel Content</h3>
+                <div class="studio-table-container">
+                    <table class="studio-table">
+                        <thead>
+                            <tr>
+                                <th>Video</th>
+                                <th>Visibility</th>
+                                <th>Date</th>
+                                <th>Views</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studioTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
 
-                    <h2 id="watchTitle" class="watch-video-title">Video Title</h2>
-                    
-                    <div class="watch-channel-row">
-                        <div class="watch-channel-info" id="watchChannelRowClick" style="cursor: pointer;">
-                            <div class="watch-avatar" id="watchAvatar">U</div>
-                            <div>
-                                <div class="name-badge-inline">
-                                    <h4 id="watchChannelName">Channel Name</h4>
-                                    <span id="verifiedBadgeWatch" class="verified-badge" style="display:none;" title="Verified">✓</span>
+            <!-- WATCH VIEW (YouTube Orijinal Sağ Taraf Önerilenler Paneliyle) -->
+            <div id="watchView" class="watch-page-container" style="display: none;">
+                <div class="watch-two-column-layout">
+                    <div class="watch-main-column">
+                        <div class="custom-video-container" id="videoContainer">
+                            <video id="mainVideoPlayer" class="watch-video"></video>
+                            <div class="yt-player-controls">
+                                <div class="progress-bar-container" id="progressBarContainer">
+                                    <div class="progress-bar-loaded" id="progressBarLoaded"></div>
+                                    <div class="progress-bar-played" id="progressBarPlayed"></div>
+                                    <div class="progress-bar-handle" id="progressBarHandle"></div>
                                 </div>
-                                <span id="watchHandle">@handle</span>
+                                <div class="ctrl-row">
+                                    <div class="controls-left">
+                                        <button class="ctrl-btn" id="playPauseBtn" title="Play (k)">
+                                            <svg viewBox="0 0 24 24" id="playIcon"><path fill="currentColor" d="M8 5v14l11-7z"/></svg>
+                                            <svg viewBox="0 0 24 24" id="pauseIcon" style="display:none;"><path fill="currentColor" d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                                        </button>
+                                        <button class="ctrl-btn" id="muteBtn" title="Mute (m)">
+                                            <svg viewBox="0 0 24 24" id="volumeIcon"><path fill="currentColor" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                                            <svg viewBox="0 0 24 24" id="muteIcon" style="display:none;"><path fill="currentColor" d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C22.63 14.85 23 13.47 23 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+                                        </button>
+                                        <input type="range" id="volumeSlider" min="0" max="1" step="0.05" value="1" class="volume-slider">
+                                        <span class="time-display" id="timeDisplay">0:00 / 0:00</span>
+                                    </div>
+                                    <div class="controls-right">
+                                        <button class="ctrl-btn" id="fullscreenBtn" title="Full screen (f)">
+                                            <svg viewBox="0 0 24 24"><path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <button class="subscribe-btn" id="watchSubscribeBtn">Follow</button>
+
+                        <h2 id="watchTitle" class="watch-video-title">Video Title</h2>
                         
-                        <div class="watch-actions-row">
-                            <div class="like-dislike-group">
-                                <button class="action-btn like-btn" id="likeBtn">
-                                    <svg viewBox="0 0 24 24" class="action-icon"><path fill="currentColor" d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
-                                    <span id="likeCount">0</span>
+                        <div class="watch-channel-row">
+                            <div class="watch-channel-info" id="watchChannelRowClick" style="cursor: pointer;">
+                                <div class="watch-avatar" id="watchAvatar">U</div>
+                                <div>
+                                    <div class="name-badge-inline">
+                                        <h4 id="watchChannelName">Channel Name</h4>
+                                        <span id="verifiedBadgeWatch" class="verified-badge" style="display:none;" title="Verified">
+                                            <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                                        </span>
+                                    </div>
+                                    <span id="watchHandle">@handle</span>
+                                </div>
+                            </div>
+                            <button class="subscribe-btn" id="watchSubscribeBtn">Follow</button>
+                            
+                            <div class="watch-actions-row">
+                                <div class="like-dislike-group">
+                                    <button class="action-btn like-btn" id="likeBtn">
+                                        <svg viewBox="0 0 24 24" class="action-icon"><path fill="currentColor" d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
+                                        <span id="likeCount">0</span>
+                                    </button>
+                                </div>
+                                <button class="action-btn repost-action-btn" id="repostBtn">
+                                    <svg viewBox="0 0 24 24" class="action-icon"><path fill="currentColor" d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>
+                                    <span id="repostBtnText">Repost</span>
                                 </button>
                             </div>
-                            <button class="action-btn repost-action-btn" id="repostBtn">
-                                <svg viewBox="0 0 24 24" class="action-icon"><path fill="currentColor" d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>
-                                <span id="repostBtnText">Repost</span>
-                            </button>
+                        </div>
+
+                        <div class="watch-desc-box">
+                            <span id="watchViewsDate" class="watch-views-date">0 views • 0 seconds ago</span>
+                            <p id="watchDesc">No description provided.</p>
+                        </div>
+
+                        <div class="comments-section">
+                            <h3>Comments</h3>
+                            <div class="add-comment-box">
+                                <div class="comment-avatar" id="commentUserAvatar">U</div>
+                                <input type="text" id="commentInput" placeholder="Add a comment..." class="comment-input">
+                                <button class="comment-submit-btn" id="commentSubmitBtn">Comment</button>
+                            </div>
+                            <div class="comments-list" id="commentsList"></div>
                         </div>
                     </div>
 
-                    <div class="watch-desc-box">
-                        <span id="watchViewsDate" class="watch-views-date">0 views • 0 seconds ago</span>
-                        <p id="watchDesc">No description provided.</p>
-                    </div>
-
-                    <div class="comments-section">
-                        <h3>Comments</h3>
-                        <div class="add-comment-box">
-                            <div class="comment-avatar" id="commentUserAvatar">U</div>
-                            <input type="text" id="commentInput" placeholder="Add a comment..." class="comment-input">
-                            <button class="comment-submit-btn" id="commentSubmitBtn">Comment</button>
-                        </div>
-                        <div class="comments-list" id="commentsList"></div>
+                    <!-- SAĞ TARAF ÖNERİLEN VİDEOLAR (Sidebar) -->
+                    <div class="watch-sidebar-column">
+                        <h3>Suggested videos</h3>
+                        <div class="suggested-videos-list" id="suggestedVideosList"></div>
                     </div>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- CREATE MODAL -->
+    <!-- CREATE MODAL (Daha Sade ve Ferah) -->
     <div class="modal-overlay" id="createModal">
         <div class="modal-card">
             <div class="modal-header">
@@ -349,27 +391,6 @@
                         <svg viewBox="0 0 24 24" class="social-icon"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
                         <span>Continue with Google</span>
                     </button>
-                </div>
-            </div>
-            <div id="authStepProfile" style="display: none;">
-                <div class="modal-header"><h3>How you'll appear</h3></div>
-                <div class="modal-body setup-profile-body">
-                    <div class="profile-pic-uploader">
-                        <div class="avatar-preview-circle" id="avatarPreview"><span>U</span></div>
-                        <input type="file" id="customAvatarInput" accept="image/*" hidden>
-                        <button class="select-picture-btn" id="selectPictureBtn">Select picture</button>
-                    </div>
-                    <div class="form-group">
-                        <label>Name</label>
-                        <input type="text" id="profileNameInput" class="form-input">
-                    </div>
-                    <div class="form-group">
-                        <label>Handle (@)</label>
-                        <input type="text" id="profileHandleInput" class="form-input">
-                    </div>
-                    <div class="setup-actions">
-                        <button class="btn-primary" id="confirmProfileBtn">Create channel</button>
-                    </div>
                 </div>
             </div>
         </div>
