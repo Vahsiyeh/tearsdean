@@ -176,15 +176,15 @@
                     <button class="btn-primary" id="studioUploadNewBtn">Yeni Video / İçerik Yükle</button>
                 </div>
 
-                <h3 class="studio-section-title">Kanal İçerikleri</h3>
+                <h3 class="studio-section-title">Kanal İçerikleri (Admin Yetkisiyle Tüm İçerikler)</h3>
                 <div class="studio-table-container">
                     <table class="studio-table">
                         <thead>
                             <tr>
-                                <th>Video</th>
-                                <th>Görünürlük</th>
-                                <th>Yükleme Tarihi</th>
-                                <th>Görüntülenme</th>
+                                <th>Video / İçerik</th>
+                                <th>Kanal</th>
+                                <th>Tarih</th>
+                                <th>İzlenme</th>
                                 <th>İşlemler</th>
                             </tr>
                         </thead>
@@ -193,14 +193,13 @@
                 </div>
             </div>
 
-            <!-- WATCH VIEW (Tamamen Özelleştirilmiş Özel Player Kontrolleriyle) -->
+            <!-- WATCH VIEW -->
             <div id="watchView" class="watch-page-container" style="display: none;">
                 <div class="watch-two-column-layout">
                     <div class="watch-main-column">
                         <div class="custom-video-container" id="videoContainer">
                             <video id="mainVideoPlayer" class="watch-video"></video>
                             
-                            <!-- BİZİM ÖZEL TASARIM YOUTUBE PLAYER KONTROLLERİMİZ (Google orjinal değil!) -->
                             <div class="yt-player-controls" id="ytCustomControls">
                                 <div class="progress-bar-container" id="progressBarContainer">
                                     <div class="progress-bar-loaded" id="progressBarLoaded"></div>
@@ -257,6 +256,10 @@
                                     <svg viewBox="0 0 24 24" class="action-icon"><path fill="currentColor" d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>
                                     <span id="repostBtnText">Repost</span>
                                 </button>
+                                <button class="action-btn admin-delete-watch-btn" id="adminDeleteWatchBtn" style="display: none; background-color: #ff4444; border-color: #ff4444; color: #fff;">
+                                    <svg viewBox="0 0 24 24" class="action-icon" style="fill:#fff;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                                    <span>Admin Delete</span>
+                                </button>
                             </div>
                         </div>
 
@@ -276,7 +279,6 @@
                         </div>
                     </div>
 
-                    <!-- SAĞ TARAF ÖNERİLEN VİDEOLAR -->
                     <div class="watch-sidebar-column">
                         <h3>Suggested videos</h3>
                         <div class="suggested-videos-list" id="suggestedVideosList"></div>
@@ -286,7 +288,7 @@
         </main>
     </div>
 
-    <!-- CREATE MODAL (Yenilenmiş Ferah Tasarım ve Zorunlu Alan Kontrolü) -->
+    <!-- CREATE MODAL -->
     <div class="modal-overlay" id="createModal">
         <div class="modal-card">
             <div class="modal-header">
