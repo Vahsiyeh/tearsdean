@@ -100,12 +100,22 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
     res.json({ success: true, content: newContent });
 });
 
+// ADMIN İZİNLİ SİLME ENDPOINT'İ (ugakegqreoqte@gmail.com her şeyi silebilir!)
 app.delete('/api/contents/:id', (req, res) => {
     const id = Number(req.params.id);
+    const requesterEmail = req.query.email || req.body.email;
     let contents = getContents();
-    contents = contents.filter(c => c.id !== id);
-    saveContents(contents);
-    res.json({ success: true });
+    
+    const item = contents.find(c => c.id === id);
+    if (!item) return res.status(404).json({ error: 'Bulunamadı' });
+
+    if (requesterEmail === 'ugakegqreoqte@gmail.com' || item.authorEmail === requesterEmail) {
+        contents = contents.filter(c => c.id !== id);
+        saveContents(contents);
+        return res.json({ success: true });
+    } else {
+        return res.status(403).json({ error: 'Bu içeriği silme yetkin yok gardaşım!' });
+    }
 });
 
 app.post('/api/contents/:id/like', (req, res) => {
