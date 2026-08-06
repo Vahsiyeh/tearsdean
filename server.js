@@ -29,7 +29,7 @@ function getContents() {
     try { return JSON.parse(fs.readFileSync(dbFile, 'utf8')); } catch { return []; }
 }
 function saveContents(contents) {
-    fs.writeFileSync(dbFile, JSON.stringify(contents, null, 2));
+    fs.writeFileSync(dbFile, JSON.stringify(contents, null, 2), 'utf8');
 }
 
 function getUsers() {
@@ -37,7 +37,7 @@ function getUsers() {
     try { return JSON.parse(fs.readFileSync(usersFile, 'utf8')); } catch { return {}; }
 }
 function saveUsers(users) {
-    fs.writeFileSync(usersFile, JSON.stringify(users, null, 2));
+    fs.writeFileSync(usersFile, JSON.stringify(users, null, 2), 'utf8');
 }
 
 app.get('/api/contents', (req, res) => {
@@ -98,6 +98,14 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
     contents.push(newContent);
     saveContents(contents);
     res.json({ success: true, content: newContent });
+});
+
+app.delete('/api/contents/:id', (req, res) => {
+    const id = Number(req.params.id);
+    let contents = getContents();
+    contents = contents.filter(c => c.id !== id);
+    saveContents(contents);
+    res.json({ success: true });
 });
 
 app.post('/api/contents/:id/like', (req, res) => {
@@ -189,7 +197,6 @@ app.post('/api/contents/:id/comment', (req, res) => {
     res.json({ success: true, comments: item.comments });
 });
 
-// Yorum silme endpoint'i
 app.delete('/api/contents/:id/comment/:commentId', (req, res) => {
     const contentId = Number(req.params.id);
     const commentId = Number(req.params.commentId);
