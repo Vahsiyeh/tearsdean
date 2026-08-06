@@ -1,7 +1,7 @@
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Roboto', Arial, sans-serif; }
 body { background-color: #0f0f0f; color: #f1f1f1; overflow-x: hidden; }
 
-/* ÖZEL YOUTUBE KAYDIRMA ÇUBUĞU (Scrollbar) */
+/* ÖZEL SCROLLBAR */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: #0f0f0f; }
 ::-webkit-scrollbar-thumb { background: #555; border-radius: 4px; }
@@ -57,15 +57,16 @@ body { background-color: #0f0f0f; color: #f1f1f1; overflow-x: hidden; }
 .main-layout { display: flex; min-height: calc(100vh - 56px); }
 .content-container { flex: 1; padding: 32px 40px; overflow-y: auto; background-color: #0f0f0f; }
 
-/* PC'de ekrana 3 video sığacak şekilde grid yapısı */
 .feed-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px 24px; max-width: 1400px; margin: 0 auto; }
 .empty-feed { text-align: center; margin-top: 80px; color: #777; }
 .empty-feed h3 { font-size: 20px; color: #aaa; margin-bottom: 8px; }
 
-.verified-badge { display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; background-color: #3ea6ff; color: #0f0f0f; border-radius: 50%; font-size: 10px; font-weight: bold; margin-left: 5px; vertical-align: middle; }
+/* GERÇEK YOUTUBE DOĞRULAMA TİKİ */
+.verified-badge { display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; background-color: #3ea6ff; color: #0f0f0f; border-radius: 50%; margin-left: 5px; vertical-align: middle; flex-shrink: 0; }
+.verified-badge svg { width: 10px; height: 10px; fill: #0f0f0f; }
 .name-badge-inline { display: flex; align-items: center; }
 
-/* VİDEO KARTLARI (Hover efekti tamamen kaldırıldı) */
+/* VİDEO KARTLARI */
 .yt-video-card { display: flex; flex-direction: column; cursor: pointer; gap: 12px; }
 .yt-thumbnail-wrapper { width: 100%; aspect-ratio: 16 / 9; background-color: #1f1f1f; border-radius: 16px; overflow: hidden; position: relative; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
 .yt-thumbnail-img { width: 100%; height: 100%; object-fit: cover; }
@@ -99,23 +100,49 @@ body { background-color: #0f0f0f; color: #f1f1f1; overflow-x: hidden; }
 .post-action-btn.active { color: #3ea6ff; }
 .post-action-icon { width: 18px; height: 18px; fill: currentColor; }
 
-/* Kanal Profili */
+/* KANAL PROFİLİ VE CUSTOMIZE CHANNEL BUTONU */
 .channel-profile-header { display: flex; align-items: center; gap: 24px; margin-bottom: 32px; border-bottom: 1px solid #2a2a2a; padding-bottom: 24px; }
 .channel-big-avatar { width: 88px; height: 88px; border-radius: 50%; background-color: #a855f7; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 36px; font-weight: 700; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.5); }
 .channel-big-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .channel-name-row { display: flex; align-items: center; }
 .channel-profile-info h2 { font-size: 26px; color: #fff; }
 .channel-profile-info span { font-size: 14px; color: #aaa; display: block; margin-top: 2px; margin-bottom: 14px; }
+.channel-action-buttons { display: flex; gap: 12px; }
 
-.subscribe-main-btn, .subscribe-btn { background-color: #f1f1f1; color: #0f0f0f; border: none; padding: 10px 22px; border-radius: 20px; font-weight: 500; cursor: pointer; transition: background-color 0.15s ease, transform 0.1s ease; }
-.subscribe-main-btn:hover, .subscribe-btn:hover { background-color: #d9d9d9; }
-.subscribe-main-btn:active, .subscribe-btn:active { transform: scale(0.95); }
+.subscribe-main-btn, .subscribe-btn, .studio-redirect-btn { background-color: #f1f1f1; color: #0f0f0f; border: none; padding: 10px 22px; border-radius: 20px; font-weight: 500; cursor: pointer; transition: background-color 0.15s ease, transform 0.1s ease; font-size: 14px; }
+.subscribe-main-btn:hover, .subscribe-btn:hover, .studio-redirect-btn:hover { background-color: #d9d9d9; }
 .subscribe-main-btn.subscribed, .subscribe-btn.subscribed { background-color: #272727; color: #f1f1f1; }
-.subscribe-main-btn.subscribed:hover, .subscribe-btn.subscribed:hover { background-color: #3f3f3f; }
 
-/* YOUTUBE ORİJİNAL OYNATICI KONTROLLERİ */
-.watch-page-container { display: flex; max-width: 1280px; margin: 0 auto; flex-direction: column; }
-.watch-main-column { display: flex; flex-direction: column; gap: 16px; }
+/* YOUTUBE STUDIO PANELİ */
+.studio-header { margin-bottom: 24px; }
+.studio-header h2 { font-size: 24px; color: #fff; margin-bottom: 4px; }
+.studio-header p { color: #aaa; font-size: 14px; }
+.studio-stats-cards { display: flex; gap: 20px; margin-bottom: 32px; flex-wrap: wrap; }
+.studio-card { background-color: #181818; border: 1px solid #2a2a2a; border-radius: 12px; padding: 20px; flex: 1; min-width: 200px; }
+.studio-card h4 { font-size: 14px; color: #aaa; margin-bottom: 8px; font-weight: 400; }
+.studio-card span { font-size: 28px; font-weight: 700; color: #fff; }
+.studio-section-title { font-size: 18px; color: #fff; margin-bottom: 16px; }
+.studio-table-container { background-color: #181818; border: 1px solid #2a2a2a; border-radius: 12px; overflow: hidden; }
+.studio-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+.studio-table th, .studio-table td { padding: 14px 20px; border-bottom: 1px solid #2a2a2a; color: #f1f1f1; }
+.studio-table th { background-color: #202020; color: #aaa; font-weight: 500; }
+.studio-table tr:last-child td { border-bottom: none; }
+.studio-del-btn { background: none; border: none; color: #ff4444; cursor: pointer; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
+.studio-del-btn:hover { text-decoration: underline; }
+
+/* İZLEME SAYFASI & SAĞ TARAF ÖNERİLENLER (Sidebar) */
+.watch-page-container { display: flex; max-width: 1500px; margin: 0 auto; flex-direction: column; }
+.watch-two-column-layout { display: flex; gap: 24px; }
+.watch-main-column { flex: 1; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.watch-sidebar-column { width: 400px; flex-shrink: 0; display: flex; flex-direction: column; gap: 16px; }
+.watch-sidebar-column h3 { font-size: 18px; color: #fff; margin-bottom: 4px; }
+.suggested-videos-list { display: flex; flex-direction: column; gap: 12px; }
+.suggested-card { display: flex; gap: 10px; cursor: pointer; }
+.suggested-thumb { width: 168px; aspect-ratio: 16/9; background-color: #1f1f1f; border-radius: 8px; overflow: hidden; flex-shrink: 0; position: relative; }
+.suggested-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.suggested-info { display: flex; flex-direction: column; gap: 4px; }
+.suggested-info h4 { font-size: 14px; font-weight: 500; color: #fff; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3; }
+.suggested-info span { font-size: 12px; color: #aaa; }
 
 .custom-video-container { position: relative; width: 100%; background-color: #000; border-radius: 16px; overflow: hidden; display: flex; justify-content: center; align-items: center; box-shadow: 0 12px 40px rgba(0,0,0,0.8); }
 .watch-video { width: 100%; max-height: 60vh; object-fit: contain; display: block; cursor: pointer; }
@@ -162,7 +189,7 @@ body { background-color: #0f0f0f; color: #f1f1f1; overflow-x: hidden; }
 .watch-desc-box { background-color: #1a1a1a; border-radius: 12px; padding: 14px 18px; font-size: 14px; color: #f1f1f1; display: flex; flex-direction: column; gap: 8px; border: 1px solid #2a2a2a; }
 .watch-views-date { font-weight: 700; color: #fff; font-size: 13px; }
 
-/* Yorumlar ve Yorum Silme Butonu */
+/* YORUMLAR */
 .comments-section { margin-top: 24px; display: flex; flex-direction: column; gap: 16px; }
 .comments-section h3 { font-size: 18px; color: #fff; }
 .add-comment-box { display: flex; align-items: center; gap: 16px; }
@@ -197,7 +224,7 @@ body { background-color: #0f0f0f; color: #f1f1f1; overflow-x: hidden; }
 .nav-item.active .icon-outline { display: none !important; }
 .nav-divider { border: 0; height: 1px; background-color: #222; margin: 12px 0; }
 
-/* MODAL */
+/* MODAL & FERAH WIZARD STİLLERİ */
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0,0,0,0.8); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.2s; padding: 16px; }
 .modal-overlay.active { opacity: 1; visibility: visible; }
 .modal-card { background-color: #1f1f1f; border: 1px solid #333; width: 100%; max-width: 680px; max-height: 85vh; border-radius: 20px; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.9); overflow: hidden; }
@@ -211,7 +238,7 @@ body { background-color: #0f0f0f; color: #f1f1f1; overflow-x: hidden; }
 .step-item span { width: 22px; height: 22px; border-radius: 50%; background-color: #282828; color: #aaa; display: flex; align-items: center; justify-content: center; font-size: 11px; }
 .step-item.active { color: #fff; }
 .step-item.active span { background-color: #3ea6ff; color: #000; font-weight: 700; }
-.modal-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
+.modal-body { padding: 24px; overflow-y: auto; flex: 1; }
 .wizard-page { display: none; }
 .wizard-page.active { display: block; }
 .type-selection-grid { display: flex; gap: 16px; }
@@ -226,30 +253,30 @@ body { background-color: #0f0f0f; color: #f1f1f1; overflow-x: hidden; }
 .post-type-tab { flex: 1; background-color: #171717; border: 1px solid #333; border-radius: 8px; padding: 10px; color: #aaa; font-weight: 500; cursor: pointer; transition: all 0.15s; }
 .post-type-tab.active { background-color: #3ea6ff; color: #0f0f0f; border-color: #3ea6ff; }
 
-.upload-dropzone { border: 2px dashed #444; border-radius: 16px; padding: 32px 20px; text-align: center; background-color: #171717; display: flex; flex-direction: column; align-items: center; gap: 10px; }
-.upload-icon { width: 44px; height: 44px; fill: #aaa; }
-.select-file-btn { margin-top: 10px; background-color: #3ea6ff; color: #0f0f0f; border: none; padding: 10px 22px; border-radius: 20px; font-weight: 500; cursor: pointer; transition: background-color 0.15s ease, transform 0.1s ease; }
+.upload-dropzone { border: 2px dashed #444; border-radius: 16px; padding: 40px 20px; text-align: center; background-color: #171717; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.upload-icon { width: 48px; height: 48px; fill: #aaa; }
+.select-file-btn { margin-top: 8px; background-color: #3ea6ff; color: #0f0f0f; border: none; padding: 10px 24px; border-radius: 20px; font-weight: 500; cursor: pointer; transition: background-color 0.15s ease, transform 0.1s ease; }
 .select-file-btn:hover { background-color: #65b8ff; }
 .select-file-btn:active { transform: scale(0.95); }
 
-.form-group { margin-bottom: 14px; }
-.form-group label { display: block; font-size: 14px; margin-bottom: 6px; color: #ddd; }
-.form-input, .form-textarea { width: 100%; background-color: #121212; border: 1px solid #333; border-radius: 10px; padding: 10px 14px; color: #fff; font-size: 14px; outline: none; transition: border-color 0.2s; }
+.form-group { margin-bottom: 16px; }
+.form-group label { display: block; font-size: 14px; margin-bottom: 8px; color: #ddd; }
+.form-input, .form-textarea { width: 100%; background-color: #121212; border: 1px solid #333; border-radius: 10px; padding: 12px 16px; color: #fff; font-size: 14px; outline: none; transition: border-color 0.2s; }
 .form-input:focus, .form-textarea:focus { border-color: #3ea6ff; }
-.form-textarea { height: 75px; resize: none; }
+.form-textarea { height: 90px; resize: none; }
 
-.auto-thumb-grid { display: flex; gap: 10px; margin-top: 8px; }
+.auto-thumb-grid { display: flex; gap: 12px; margin-top: 8px; }
 .auto-thumb-option { flex: 1; aspect-ratio: 16/9; border: 2px solid #333; border-radius: 8px; overflow: hidden; cursor: pointer; }
 .auto-thumb-option img { width: 100%; height: 100%; object-fit: cover; }
 .auto-thumb-option.selected { border-color: #3ea6ff; }
 
-.summary-card { background-color: #171717; border: 1px solid #2a2a2a; border-radius: 12px; padding: 16px; }
-.summary-card h4 { margin-bottom: 10px; color: #fff; font-size: 16px; border-bottom: 1px solid #2a2a2a; padding-bottom: 6px; }
+.summary-card { background-color: #171717; border: 1px solid #2a2a2a; border-radius: 12px; padding: 20px; }
+.summary-card h4 { margin-bottom: 12px; color: #fff; font-size: 16px; border-bottom: 1px solid #2a2a2a; padding-bottom: 8px; }
 .summary-item { display: flex; font-size: 14px; margin-bottom: 8px; }
-.summary-item span { color: #aaa; margin-right: 10px; }
+.summary-item span { color: #aaa; margin-right: 12px; }
 
 .modal-footer { display: flex; justify-content: flex-end; gap: 12px; padding: 16px 24px; border-top: 1px solid #2a2a2a; background-color: #171717; flex-shrink: 0; }
-.btn-primary, .btn-secondary { padding: 10px 22px; border-radius: 20px; font-size: 14px; font-weight: 500; cursor: pointer; border: none; transition: background-color 0.15s ease, transform 0.1s ease; }
+.btn-primary, .btn-secondary { padding: 10px 24px; border-radius: 20px; font-size: 14px; font-weight: 500; cursor: pointer; border: none; transition: background-color 0.15s ease, transform 0.1s ease; }
 .btn-primary { background-color: #3ea6ff; color: #0f0f0f; }
 .btn-primary:hover { background-color: #65b8ff; }
 .btn-primary:active { transform: scale(0.95); }
@@ -265,15 +292,13 @@ body { background-color: #0f0f0f; color: #f1f1f1; overflow-x: hidden; }
 .social-btn:active { transform: scale(0.95); }
 .social-icon { width: 20px; height: 20px; }
 
-.setup-profile-body { padding: 24px; display: flex; flex-direction: column; }
-.profile-pic-uploader { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 20px; }
-.avatar-preview-circle { width: 84px; height: 84px; border-radius: 50%; background-color: #e53935; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 36px; font-weight: 700; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.5); }
-.select-picture-btn { background: none; border: none; color: #3ea6ff; font-size: 14px; font-weight: 500; cursor: pointer; }
-.setup-actions { display: flex; justify-content: flex-end; margin-top: 14px; }
-
 .post-modal-card { max-width: 600px; }
 
 /* MOBİL & TABLET UYUMU */
+@media (max-width: 1200px) {
+    .watch-two-column-layout { flex-direction: column; }
+    .watch-sidebar-column { width: 100%; }
+}
 @media (max-width: 1024px) {
     .feed-grid { grid-template-columns: repeat(2, 1fr); }
 }
