@@ -62,7 +62,7 @@ app.post('/api/sync-user', (req, res) => {
             handle: finalHandle,
             avatarUrl: avatarUrl || '',
             bgColor: bgColor || '#a855f7',
-            subscribersCount: 15
+            followersCount: 15
         };
         saveUsers(users);
     }
@@ -75,7 +75,7 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
         title: req.body.title || 'Untitled',
         description: req.body.description || '',
         type: req.body.type || 'video',
-        fileUrl: req.file ? `/uploads/${req.file.filename}` : '',
+        fileUrl: req.file ? `/uploads/${req.file.filename}` : (req.body.fileUrl || ''),
         thumbnailUrl: req.body.thumbnailUrl || (req.file ? `/uploads/${req.file.filename}` : ''),
         duration: req.body.duration || '0:00',
         pollOptions: req.body.pollOptions ? JSON.parse(req.body.pollOptions) : null,
