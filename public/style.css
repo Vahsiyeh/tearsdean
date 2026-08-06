@@ -78,7 +78,7 @@ body { background-color: #0f0f0f; color: #f1f1f1; overflow-x: hidden; }
 .yt-channel-name, .yt-video-stats { font-size: 13px; color: #aaa; }
 .yt-channel-name:hover { color: #fff; }
 
-/* POSTLAR VE VİDEOLARININ BUTONLARIYLA BİREBİR AYNI AKSİYONLAR */
+/* POSTLAR */
 .posts-feed-container { display: flex; flex-direction: column; gap: 20px; max-width: 680px; margin: 0 auto; }
 .post-card { background-color: #181818; border: 1px solid #2a2a2a; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
 .post-header { display: flex; align-items: center; gap: 12px; }
@@ -96,7 +96,7 @@ body { background-color: #0f0f0f; color: #f1f1f1; overflow-x: hidden; }
 
 .post-actions-row { display: flex; align-items: center; gap: 12px; border-top: 1px solid #2a2a2a; padding-top: 12px; margin-top: 4px; }
 
-/* TEARSDEAN STUDIO PANELİ STİLLERİ */
+/* STUDIO PANELİ */
 .studio-header { margin-bottom: 24px; }
 .studio-header h2 { font-size: 26px; color: #fff; margin-bottom: 4px; }
 .studio-header p { color: #aaa; font-size: 14px; }
@@ -127,7 +127,7 @@ body { background-color: #0f0f0f; color: #f1f1f1; overflow-x: hidden; }
 .subscribe-main-btn:hover, .subscribe-btn:hover, .studio-redirect-btn:hover { background-color: #d9d9d9; }
 .subscribe-main-btn.subscribed, .subscribe-btn.subscribed { background-color: #272727; color: #f1f1f1; }
 
-/* İZLEME SAYFASI VE SAĞ TARAF ÖNERİLENLER */
+/* İZLEME SAYFASI */
 .watch-page-container { display: flex; max-width: 1500px; margin: 0 auto; flex-direction: column; }
 .watch-two-column-layout { display: flex; gap: 24px; }
 .watch-main-column { flex: 1; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
@@ -141,7 +141,6 @@ body { background-color: #0f0f0f; color: #f1f1f1; overflow-x: hidden; }
 .suggested-info h4 { font-size: 14px; font-weight: 500; color: #fff; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3; }
 .suggested-info span { font-size: 12px; color: #aaa; }
 
-/* ÖZEL VİDEO OYNATICI VE KONTROLLERİ (Google Orjinal Değil!) */
 .custom-video-container { position: relative; width: 100%; background-color: #000; border-radius: 16px; overflow: hidden; display: flex; justify-content: center; align-items: center; box-shadow: 0 12px 40px rgba(0,0,0,0.8); }
 .watch-video { width: 100%; max-height: 60vh; object-fit: contain; display: block; cursor: pointer; }
 
@@ -221,7 +220,7 @@ body { background-color: #0f0f0f; color: #f1f1f1; overflow-x: hidden; }
 .nav-item.active .icon-outline { display: none !important; }
 .nav-divider { border: 0; height: 1px; background-color: #222; margin: 12px 0; }
 
-/* MODAL & FERAH WIZARD */
+/* MODAL & WIZARD */
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0,0,0,0.8); backdrop-filter: blur(4px); display: flex; justify-content: center; align-items: center; z-index: 1000; opacity: 0; visibility: hidden; transition: opacity 0.2s; padding: 16px; }
 .modal-overlay.active { opacity: 1; visibility: visible; }
 .modal-card { background-color: #1f1f1f; border: 1px solid #333; width: 100%; max-width: 680px; max-height: 85vh; border-radius: 20px; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.9); overflow: hidden; }
@@ -291,7 +290,6 @@ body { background-color: #0f0f0f; color: #f1f1f1; overflow-x: hidden; }
 
 .post-modal-card { max-width: 600px; }
 
-/* MOBİL & TABLET UYUMU */
 @media (max-width: 1200px) {
     .watch-two-column-layout { flex-direction: column; }
     .watch-sidebar-column { width: 100%; }
