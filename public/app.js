@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const tabPollPost = document.getElementById('tabPollPost');
     const pollInputsContainer = document.getElementById('pollInputsContainer');
     const imagePostInputsContainer = document.getElementById('imagePostInputsContainer');
+    const pollQuestionInput = document.getElementById('pollQuestionInput');
     const pollOpt1 = document.getElementById('pollOpt1');
     const pollOpt2 = document.getElementById('pollOpt2');
     const pollOpt3 = document.getElementById('pollOpt3');
@@ -89,6 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const subscribeMainBtn = document.getElementById('subscribeMainBtn');
     const channelStudioBtn = document.getElementById('channelStudioBtn');
     const verifiedBadgeChannel = document.getElementById('verifiedBadgeChannel');
+    const studioUploadNewBtn = document.getElementById('studioUploadNewBtn');
 
     const commentInput = document.getElementById('commentInput');
     const commentSubmitBtn = document.getElementById('commentSubmitBtn');
@@ -433,13 +435,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         document.getElementById('studioTotalVideos').textContent = myContents.length;
         document.getElementById('studioTotalViews').textContent = totalViews;
-        document.getElementById('studioSubCount').textContent = currentUserData.subscribersCount || 15;
+        document.getElementById('studioFollowerCount').textContent = currentUserData.followersCount || 15;
 
         const tableBody = document.getElementById('studioTableBody');
         tableBody.innerHTML = '';
 
         if (myContents.length === 0) {
-            tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#777;">No videos uploaded yet.</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#777;">No content uploaded yet.</td></tr>`;
             return;
         }
 
@@ -461,7 +463,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </td>
             `;
             tr.querySelector('.studio-del-btn').addEventListener('click', async () => {
-                if (confirm('Are you sure you want to delete this video?')) {
+                if (confirm('Are you sure you want to delete this content?')) {
                     await fetch(`/api/contents/${item.id}`, { method: 'DELETE' });
                     loadFeed('studio');
                 }
@@ -469,6 +471,11 @@ document.addEventListener('DOMContentLoaded', () => {
             tableBody.appendChild(tr);
         });
     }
+
+    studioUploadNewBtn.addEventListener('click', () => {
+        resetWizard();
+        createModal.classList.add('active');
+    });
 
     function renderPostCard(item, container) {
         const card = document.createElement('div');
@@ -512,16 +519,18 @@ document.addEventListener('DOMContentLoaded', () => {
             ${item.thumbnailUrl && item.type === 'post' ? `<img src="${item.thumbnailUrl}" class="post-body-image">` : ''}
             ${pollHTML}
             <div class="post-actions-row">
-                <button class="post-action-btn like-post-btn ${isLiked ? 'active' : ''}" data-id="${item.id}">
-                    <svg viewBox="0 0 24 24" class="post-action-icon"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
-                    <span>${item.likes || 0}</span>
-                </button>
-                <button class="post-action-btn repost-post-btn ${isReposted ? 'active' : ''}" data-id="${item.id}">
-                    <svg viewBox="0 0 24 24" class="post-action-icon"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>
+                <div class="like-dislike-group">
+                    <button class="action-btn like-post-btn ${isLiked ? 'active' : ''}" data-id="${item.id}">
+                        <svg viewBox="0 0 24 24" class="action-icon"><path fill="currentColor" d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
+                        <span>${item.likes || 0}</span>
+                    </button>
+                </div>
+                <button class="action-btn repost-post-btn repost-action-btn ${isReposted ? 'active' : ''}" data-id="${item.id}">
+                    <svg viewBox="0 0 24 24" class="action-icon"><path fill="currentColor" d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>
                     <span>Repost (${item.repostedUsers ? item.repostedUsers.length : 0})</span>
                 </button>
-                <button class="post-action-btn comment-post-btn" data-id="${item.id}">
-                    <svg viewBox="0 0 24 24" class="post-action-icon"><path d="M21 6h-18c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h3l4 4 4-4h7c1.1 0 2-.9 2-2v-11c0-1.1-.9-2-2-2zm0 13h-7.58l-2.42 2.42-2.42-2.42h-5.58v-11h18v11z"/></svg>
+                <button class="action-btn comment-post-btn" data-id="${item.id}">
+                    <svg viewBox="0 0 24 24" class="action-icon"><path fill="currentColor" d="M21 6h-18c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h3l4 4 4-4h7c1.1 0 2-.9 2-2v-11c0-1.1-.9-2-2-2zm0 13h-7.58l-2.42 2.42-2.42-2.42h-5.58v-11h18v11z"/></svg>
                     <span>Comments (${item.comments ? item.comments.length : 0})</span>
                 </button>
             </div>
@@ -803,8 +812,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         const data = await res.json();
         if (data.success) {
-            if (data.reposted) repostBtn.classList.add('active');
-            else repostBtn.classList.remove('active');
+            if (data.reposted) {
+                repostBtn.classList.add('active');
+            } else {
+                repostBtn.classList.remove('active');
+            }
         }
     });
 
@@ -1057,12 +1069,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     nextStepBtn.addEventListener('click', async () => {
+        // ZORUNLU ALAN KONTROLÜ
+        if (currentStep === 2) {
+            if (selectedType === 'video' && !selectedFile) {
+                alert('Lütfen bir video dosyası seçin gardaşım!');
+                return;
+            }
+            if (selectedType === 'post' && postSubMode === 'poll') {
+                if (!pollQuestionInput.value.trim() || !pollOpt1.value.trim() || !pollOpt2.value.trim()) {
+                    alert('Lütfen anket sorusunu ve en az 2 seçeneği doldurun gardaşım!');
+                    return;
+                }
+            }
+        }
+        if (currentStep === 3) {
+            if (!contentTitleInput.value.trim()) {
+                alert('Lütfen başlık veya açıklama kısmını doldurun gardaşım!');
+                return;
+            }
+        }
+
         if (currentStep < 4) {
             currentStep++;
             updateWizardState();
         } else {
             const formData = new FormData();
-            formData.append('title', contentTitleInput.value.trim() || 'Untitled');
+            formData.append('title', contentTitleInput.value.trim());
             formData.append('description', contentDescInput.value.trim());
             formData.append('type', selectedType);
             formData.append('authorName', currentUserData.name);
@@ -1082,10 +1114,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         pollOpt3.value.trim(), pollOpt4.value.trim()
                     ].filter(Boolean);
                     formData.append('pollOptions', JSON.stringify(opts));
+                    formData.append('thumbnailUrl', '');
                 } else {
                     if (selectedPostImageFile) {
                         formData.append('file', selectedPostImageFile);
                         formData.append('thumbnailUrl', URL.createObjectURL(selectedPostImageFile));
+                    } else {
+                        formData.append('thumbnailUrl', '');
                     }
                 }
             }
@@ -1127,6 +1162,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if(postFileInfo) postFileInfo.style.display = 'none';
         contentTitleInput.value = '';
         contentDescInput.value = '';
+        if(pollQuestionInput) pollQuestionInput.value = '';
+        if(pollOpt1) pollOpt1.value = '';
+        if(pollOpt2) pollOpt2.value = '';
+        if(pollOpt3) pollOpt3.value = '';
+        if(pollOpt4) pollOpt4.value = '';
         autoThumbGrid.innerHTML = '';
         updateWizardState();
     }
