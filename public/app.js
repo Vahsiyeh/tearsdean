@@ -590,8 +590,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         ${targetUser.avatarUrl ? `<img src="${targetUser.avatarUrl}">` : targetUser.name.charAt(0)}
                     </div>
                     <div>
-                        <h4 style="font-size:14px; color:#fff; font-weight:600;">${escapeHtml(targetUser.name)}</h4>
-                        <span style="font-size:12px; color:#8e8e8e;">@${escapeHtml(targetUser.handle)}</span>
+                        <h4 style="font-size:14px; color:#fff; font-weight:700;">${escapeHtml(targetUser.name)}</h4>
+                        <span style="font-size:12px; color:#8e8e8e; font-weight:500;">@${escapeHtml(targetUser.handle)}</span>
                     </div>
                 </div>
                 <div id="igMsgBannerContainer"></div>
@@ -1161,7 +1161,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <p>${escapeHtml(c.text)}</p>
                     </div>
                 </div>
-                ${canDelete ? `<button class="delete-comment-btn" data-comment-id="${c.id}"><svg viewBox="0 0 24 24" class="delete-comment-icon"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>` : ''}
+                ${canDelete ? `<button class="delete-comment-btn" data-comment-id="${c.id}"><svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:currentColor;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>` : ''}
             `;
 
             if (canDelete) {
