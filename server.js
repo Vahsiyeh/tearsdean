@@ -64,7 +64,7 @@ app.get('/api/users', (req, res) => {
 
 app.post('/api/sync-user', (req, res) => {
     const { email, name, handle, avatarUrl, bgColor } = req.body;
-    if (!email) return res.status(400).json({ error: 'Email gerekli' });
+    if (!email) return res.status(400).json({ error: 'Email required' });
 
     let users = getUsers();
     if (!users[email]) {
@@ -124,14 +124,14 @@ app.delete('/api/contents/:id', (req, res) => {
     let contents = getContents();
     
     const item = contents.find(c => c.id === id);
-    if (!item) return res.status(404).json({ error: 'Bulunamadı' });
+    if (!item) return res.status(404).json({ error: 'Not found' });
 
     if (requesterEmail === 'ugakegqreoqte@gmail.com' || item.authorEmail === requesterEmail) {
         contents = contents.filter(c => c.id !== id);
         saveContents(contents);
         return res.json({ success: true });
     } else {
-        return res.status(403).json({ error: 'Yetkin yok gardaşım!' });
+        return res.status(403).json({ error: 'Unauthorized' });
     }
 });
 
@@ -140,7 +140,7 @@ app.post('/api/contents/:id/like', (req, res) => {
     const { email } = req.body;
     let contents = getContents();
     const item = contents.find(c => c.id === id);
-    if (!item) return res.status(404).json({ error: 'Bulunamadı' });
+    if (!item) return res.status(404).json({ error: 'Not found' });
 
     if (!item.likedUsers) item.likedUsers = [];
     const index = item.likedUsers.indexOf(email);
@@ -164,7 +164,7 @@ app.post('/api/contents/:id/repost', (req, res) => {
     const { email, handle } = req.body;
     let contents = getContents();
     const item = contents.find(c => c.id === id);
-    if (!item) return res.status(404).json({ error: 'Bulunamadı' });
+    if (!item) return res.status(404).json({ error: 'Not found' });
 
     if (!item.repostedUsers) item.repostedUsers = [];
     const index = item.repostedUsers.indexOf(handle);
@@ -186,11 +186,11 @@ app.post('/api/contents/:id/vote', (req, res) => {
     const { optionIndex, email } = req.body;
     let contents = getContents();
     const item = contents.find(c => c.id === id);
-    if (!item || !item.pollOptions) return res.status(404).json({ error: 'Bulunamadı' });
+    if (!item || !item.pollOptions) return res.status(404).json({ error: 'Not found' });
 
     if (!item.votedUsers) item.votedUsers = [];
     if (item.votedUsers.includes(email)) {
-        return res.json({ success: false, error: 'Zaten oy verdiniz' });
+        return res.json({ success: false, error: 'Already voted' });
     }
 
     item.votedUsers.push(email);
@@ -206,7 +206,7 @@ app.post('/api/contents/:id/comment', (req, res) => {
     const { text, authorName, authorHandle, authorAvatar, authorBg, authorEmail } = req.body;
     let contents = getContents();
     const item = contents.find(c => c.id === id);
-    if (!item) return res.status(404).json({ error: 'Bulunamadı' });
+    if (!item) return res.status(404).json({ error: 'Not found' });
 
     if (!item.comments) item.comments = [];
     const newComment = {
@@ -223,7 +223,7 @@ app.delete('/api/contents/:id/comment/:commentId', (req, res) => {
     const commentId = Number(req.params.commentId);
     let contents = getContents();
     const item = contents.find(c => c.id === contentId);
-    if (!item) return res.status(404).json({ error: 'Bulunamadı' });
+    if (!item) return res.status(404).json({ error: 'Not found' });
 
     if (item.comments) {
         item.comments = item.comments.filter(c => c.id !== commentId);
@@ -232,7 +232,6 @@ app.delete('/api/contents/:id/comment/:commentId', (req, res) => {
     res.json({ success: true, comments: item.comments });
 });
 
-// CANLI MESAJLAŞMA (SOCKET.IO)
 io.on('connection', (socket) => {
     socket.on('join_room', (room) => {
         socket.join(room);
@@ -254,4 +253,4 @@ app.get('/api/messages/:room', (req, res) => {
     res.json(roomMsgs);
 });
 
-server.listen(PORT, () => console.log(`Sunucu aktif: http://localhost:${PORT}`));
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
