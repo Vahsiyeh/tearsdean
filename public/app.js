@@ -50,8 +50,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const channelGrid = document.getElementById('channelGrid');
     const creatorsGrid = document.getElementById('creatorsGrid');
     const creatorSearchInput = document.getElementById('creatorSearchInput');
-    const dmUsersList = document.getElementById('dmUsersList');
-    const dmChatArea = document.getElementById('dmChatArea');
+    
+    const igDmChatsList = document.getElementById('igDmChatsList');
+    const igDmChatArea = document.getElementById('igDmChatArea');
+    const igUserSearchInput = document.getElementById('igUserSearchInput');
+    const igNewChatBtn = document.getElementById('igNewChatBtn');
 
     const emptyFeed = document.getElementById('emptyFeed');
     const emptyPostsFeed = document.getElementById('emptyPostsFeed');
@@ -89,6 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const watchViewsDate = document.getElementById('watchViewsDate');
     const watchDesc = document.getElementById('watchDesc');
     const watchSubscribeBtn = document.getElementById('watchSubscribeBtn');
+    const watchMessageBtn = document.getElementById('watchMessageBtn');
     const watchChannelRowClick = document.getElementById('watchChannelRowClick');
     const verifiedBadgeWatch = document.getElementById('verifiedBadgeWatch');
     const suggestedVideosList = document.getElementById('suggestedVideosList');
@@ -97,6 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const channelProfileName = document.getElementById('channelProfileName');
     const channelProfileHandle = document.getElementById('channelProfileHandle');
     const subscribeMainBtn = document.getElementById('subscribeMainBtn');
+    const messageChannelBtn = document.getElementById('messageChannelBtn');
     const channelStudioBtn = document.getElementById('channelStudioBtn');
     const verifiedBadgeChannel = document.getElementById('verifiedBadgeChannel');
     const studioUploadNewBtn = document.getElementById('studioUploadNewBtn');
@@ -140,6 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeCurrentVideoItem = null;
     let currentViewingChannelHandle = null;
     let activeChatRoom = null;
+    let activeTargetUser = null;
 
     const googleAvatarColors = ['#e53935', '#d81b60', '#8e24aa', '#5e35b1', '#3949ab', '#1e88e5', '#039be5', '#00acc1', '#00897b', '#43a047', '#fb8c00', '#f4511e'];
 
@@ -162,14 +168,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function timeAgo(timestamp) {
         const seconds = Math.floor((Date.now() - timestamp) / 1000);
-        if (seconds < 60) return `${seconds} seconds ago`;
+        if (seconds < 60) return `${seconds}s ago`;
         const minutes = Math.floor(seconds / 60);
-        if (minutes < 60) return `${minutes} minutes ago`;
+        if (minutes < 60) return `${minutes}m ago`;
         const hours = Math.floor(minutes / 60);
-        if (hours < 24) return `${hours} hours ago`;
+        if (hours < 24) return `${hours}h ago`;
         const days = Math.floor(hours / 24);
-        if (days < 30) return `${days} days ago`;
-        return `${Math.floor(days / 30)} months ago`;
+        if (days < 30) return `${days}d ago`;
+        return `${Math.floor(days / 30)}mo ago`;
     }
 
     function formatDuration(seconds) {
@@ -278,6 +284,14 @@ document.addEventListener('DOMContentLoaded', () => {
         return subs.includes(handle);
     }
 
+    function checkMutualFollow(handleA, handleB) {
+        const subsA = JSON.parse(localStorage.getItem('yt_subs_' + handleA) || '[]');
+        const subsB = JSON.parse(localStorage.getItem('yt_subs_' + handleB) || '[]');
+        const aFollowsB = subsA.includes(handleB);
+        const bFollowsA = subsB.includes(handleA);
+        return { aFollowsB, bFollowsA, mutual: aFollowsB && bFollowsA };
+    }
+
     function toggleFollow(handle) {
         if (!isLoggedIn) { authModal.classList.add('active'); return; }
         if (currentUserData && currentUserData.handle === handle) return;
@@ -309,6 +323,35 @@ document.addEventListener('DOMContentLoaded', () => {
     subscribeMainBtn.addEventListener('click', () => {
         if (currentViewingChannelHandle) toggleFollow(currentViewingChannelHandle);
     });
+
+    watchMessageBtn.addEventListener('click', async () => {
+        if (!isLoggedIn) { authModal.classList.add('active'); return; }
+        if (activeCurrentVideoItem) {
+            const userRes = await fetch('/api/users');
+            const users = await userRes.json();
+            const target = Object.values(users).find(u => u.handle === activeCurrentVideoItem.authorHandle);
+            if (target) openMessagesWithUser(target);
+        }
+    });
+
+    messageChannelBtn.addEventListener('click', async () => {
+        if (!isLoggedIn) { authModal.classList.add('active'); return; }
+        if (currentViewingChannelHandle) {
+            const userRes = await fetch('/api/users');
+            const users = await userRes.json();
+            const target = Object.values(users).find(u => u.handle === currentViewingChannelHandle);
+            if (target) openMessagesWithUser(target);
+        }
+    });
+
+    function openMessagesWithUser(targetUser) {
+        navItems.forEach(n => n.classList.remove('active'));
+        document.querySelectorAll('[data-nav="messages"]').forEach(el => el.classList.add('active'));
+        loadFeed('messages');
+        setTimeout(() => {
+            openChatWithUser(targetUser);
+        }, 150);
+    }
 
     function shouldVerify(email, handle) {
         if (email === 'ugakegqreoqte@gmail.com' || handle === 'freezyofficial0') return true;
@@ -438,7 +481,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await fetch('/api/users');
             const usersObj = await res.json();
-            const users = Object.values(usersObj);
+            const users = Object.values(usersObj).filter(u => u.handle !== (currentUserData ? currentUserData.handle : ''));
 
             let filtered = users;
             if (filter.trim() !== '') {
@@ -447,7 +490,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (filtered.length === 0) {
-                creatorsGrid.innerHTML = `<p style="color:#777;">Hiç kanal bulunamadı.</p>`;
+                creatorsGrid.innerHTML = `<p style="color:#777;">No creators found.</p>`;
                 return;
             }
 
@@ -477,63 +520,85 @@ document.addEventListener('DOMContentLoaded', () => {
         loadCreatorsList(e.target.value);
     });
 
-    async function loadMessagesView() {
+    async function loadMessagesView(filter = '') {
         if (!isLoggedIn) { authModal.classList.add('active'); return; }
-        dmUsersList.innerHTML = '';
+        igDmChatsList.innerHTML = '';
         try {
             const res = await fetch('/api/users');
             const usersObj = await res.json();
             const users = Object.values(usersObj).filter(u => u.handle !== currentUserData.handle);
 
-            if (users.length === 0) {
-                dmUsersList.innerHTML = `<p style="padding:16px; color:#777; font-size:13px;">Başka kullanıcı yok.</p>`;
+            let filtered = users;
+            if (filter.trim() !== '') {
+                const q = filter.toLowerCase().trim();
+                filtered = users.filter(u => u.name.toLowerCase().includes(q) || u.handle.toLowerCase().includes(q));
+            }
+
+            if (filtered.length === 0) {
+                igDmChatsList.innerHTML = `<p style="padding:16px; color:#8e8e8e; font-size:12px;">No chats found.</p>`;
                 return;
             }
 
-            users.forEach(u => {
+            filtered.forEach(u => {
                 const item = document.createElement('div');
-                item.className = 'dm-user-item';
-                if (activeChatRoom === [currentUserData.handle, u.handle].sort().join('_')) item.classList.add('active');
+                item.className = 'ig-dm-user-item';
+                if (activeTargetUser && activeTargetUser.handle === u.handle) item.classList.add('active');
                 
+                const verifiedHTML = shouldVerify(u.email, u.handle) ? `<span class="verified-badge" title="Verified">${verifiedSVG}</span>` : '';
                 item.innerHTML = `
-                    <div class="creator-avatar" style="width:38px; height:38px; font-size:15px; background-color: ${u.bgColor || '#a855f7'};">
+                    <div class="creator-avatar" style="width:44px; height:44px; font-size:16px; background-color: ${u.bgColor || '#a855f7'};">
                         ${u.avatarUrl ? `<img src="${u.avatarUrl}">` : u.name.charAt(0).toUpperCase()}
                     </div>
-                    <div class="dm-user-info">
-                        <h4>${escapeHtml(u.name)}</h4>
+                    <div class="ig-dm-user-info">
+                        <div class="name-badge-inline">
+                            <h4>${escapeHtml(u.name)}</h4>
+                            ${verifiedHTML}
+                        </div>
                         <span>@${escapeHtml(u.handle)}</span>
                     </div>
                 `;
                 item.addEventListener('click', () => {
-                    document.querySelectorAll('.dm-user-item').forEach(el => el.classList.remove('active'));
+                    document.querySelectorAll('.ig-dm-user-item').forEach(el => el.classList.remove('active'));
                     item.classList.add('active');
                     openChatWithUser(u);
                 });
-                dmUsersList.appendChild(item);
+                igDmChatsList.appendChild(item);
             });
         } catch (e) { console.error(e); }
     }
 
+    igUserSearchInput.addEventListener('input', (e) => {
+        loadMessagesView(e.target.value);
+    });
+
+    igNewChatBtn.addEventListener('click', () => {
+        igUserSearchInput.focus();
+    });
+
     function openChatWithUser(targetUser) {
+        activeTargetUser = targetUser;
         const room = [currentUserData.handle, targetUser.handle].sort().join('_');
         activeChatRoom = room;
         socket.emit('join_room', room);
 
-        dmChatArea.innerHTML = `
-            <div class="dm-chat-box-active">
-                <div class="dm-chat-header">
-                    <div class="creator-avatar" style="width:36px; height:36px; font-size:14px; background-color:${targetUser.bgColor};">
+        const { aFollowsB, bFollowsA, mutual } = checkMutualFollow(currentUserData.handle, targetUser.handle);
+
+        igDmChatArea.innerHTML = `
+            <div class="ig-chat-box-active">
+                <div class="ig-chat-header">
+                    <div class="creator-avatar" style="width:40px; height:40px; font-size:15px; background-color:${targetUser.bgColor};">
                         ${targetUser.avatarUrl ? `<img src="${targetUser.avatarUrl}">` : targetUser.name.charAt(0)}
                     </div>
                     <div>
-                        <h4 style="font-size:15px; color:#fff;">${escapeHtml(targetUser.name)}</h4>
-                        <span style="font-size:12px; color:#aaa;">@${escapeHtml(targetUser.handle)}</span>
+                        <h4 style="font-size:14px; color:#fff; font-weight:600;">${escapeHtml(targetUser.name)}</h4>
+                        <span style="font-size:12px; color:#8e8e8e;">@${escapeHtml(targetUser.handle)}</span>
                     </div>
                 </div>
-                <div class="dm-messages-list" id="dmMessagesList"></div>
-                <div class="dm-input-area">
-                    <input type="text" id="dmMessageInput" placeholder="Bir mesaj yaz..." class="dm-input">
-                    <button class="dm-send-btn" id="dmSendBtn">Gönder</button>
+                <div id="igMsgBannerContainer"></div>
+                <div class="ig-chat-messages-list" id="igDmMessagesList"></div>
+                <div class="ig-chat-input-area" id="igChatInputAreaWrapper">
+                    <input type="text" id="igChatInput" placeholder="Message..." class="ig-chat-input">
+                    <button class="ig-chat-send-btn" id="igChatSendBtn">Send</button>
                 </div>
             </div>
         `;
@@ -541,13 +606,14 @@ document.addEventListener('DOMContentLoaded', () => {
         fetch(`/api/messages/${room}`)
             .then(res => res.json())
             .then(msgs => {
-                const list = document.getElementById('dmMessagesList');
+                const list = document.getElementById('igDmMessagesList');
                 list.innerHTML = '';
-                msgs.forEach(m => appendMessageBubble(m));
+                msgs.forEach(m => appendIgMessageBubble(m));
+                checkMessagePermission(msgs, currentUserData.handle);
             });
 
         const sendHandler = () => {
-            const input = document.getElementById('dmMessageInput');
+            const input = document.getElementById('igChatInput');
             const text = input.value.trim();
             if (!text) return;
             socket.emit('send_message', {
@@ -557,24 +623,60 @@ document.addEventListener('DOMContentLoaded', () => {
             input.value = '';
         };
 
-        document.getElementById('dmSendBtn').addEventListener('click', sendHandler);
-        document.getElementById('dmMessageInput').addEventListener('keypress', (e) => {
+        document.getElementById('igChatSendBtn').addEventListener('click', sendHandler);
+        document.getElementById('igChatInput').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') sendHandler();
         });
     }
 
+    function checkMessagePermission(msgs, myHandle) {
+        const { mutual } = checkMutualFollow(currentUserData.handle, activeTargetUser.handle);
+        const bannerContainer = document.getElementById('igMsgBannerContainer');
+        const inputArea = document.getElementById('igChatInputAreaWrapper');
+        if (!bannerContainer || !inputArea) return;
+
+        if (mutual) {
+            bannerContainer.innerHTML = '';
+            inputArea.style.display = 'flex';
+            return;
+        }
+
+        const myMessages = msgs.filter(m => m.senderHandle === myHandle);
+        const aFollowsB = isFollowing(activeTargetUser.handle);
+        const bFollowsA = isFollowing(currentUserData.handle);
+
+        if (!aFollowsB && bFollowsA) {
+            bannerContainer.innerHTML = `<div class="ig-msg-request-banner">You sent a message request. You can only send 1 message until they follow you back.</div>`;
+            if (myMessages.length >= 1) {
+                inputArea.style.display = 'none';
+                bannerContainer.innerHTML += `<div class="ig-msg-request-banner" style="color:#ff4444; border-top:none;">Message request pending. Limit reached.</div>`;
+            }
+        } else if (aFollowsB && !bFollowsA) {
+            bannerContainer.innerHTML = `<div class="ig-msg-request-banner">They are requesting to message you.</div>`;
+            inputArea.style.display = 'flex';
+        } else {
+            bannerContainer.innerHTML = `<div class="ig-msg-request-banner">Message request sent. You can send 1 message.</div>`;
+            if (myMessages.length >= 1) {
+                inputArea.style.display = 'none';
+            }
+        }
+    }
+
     socket.on('receive_message', (msg) => {
         if (msg.room === activeChatRoom) {
-            appendMessageBubble(msg);
+            appendIgMessageBubble(msg);
+            fetch(`/api/messages/${msg.room}`)
+                .then(res => res.json())
+                .then(msgs => checkMessagePermission(msgs, currentUserData.handle));
         }
     });
 
-    function appendMessageBubble(msg) {
-        const list = document.getElementById('dmMessagesList');
+    function appendIgMessageBubble(msg) {
+        const list = document.getElementById('igDmMessagesList');
         if (!list) return;
         const div = document.createElement('div');
         const isMe = (msg.senderHandle === currentUserData.handle);
-        div.className = `dm-message-bubble ${isMe ? 'sent' : 'received'}`;
+        div.className = `ig-msg-bubble ${isMe ? 'sent' : 'received'}`;
         div.textContent = msg.text;
         list.appendChild(div);
         list.scrollTop = list.scrollHeight;
@@ -704,7 +806,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (canDeletePost) {
             card.querySelector('.admin-delete-post-btn').addEventListener('click', async () => {
-                if (confirm('Bu postu silmek istediğine emin misin gardaşım?')) {
+                if (confirm('Are you sure you want to delete this post?')) {
                     await fetch(`/api/contents/${item.id}?email=${encodeURIComponent(currentEmail)}`, { method: 'DELETE' });
                     loadFeed('posts');
                 }
@@ -753,7 +855,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     item.pollVotes = data.pollVotes;
                     loadFeed('posts');
                 } else {
-                    alert(data.error || 'Zaten oy verdiniz!');
+                    alert(data.error || 'Already voted!');
                 }
             });
         });
@@ -881,9 +983,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const isSelf = isLoggedIn && currentUserData && currentUserData.handle === handle;
         if (isSelf) {
             subscribeMainBtn.style.display = 'none';
+            messageChannelBtn.style.display = 'none';
             channelStudioBtn.style.display = 'inline-block';
         } else {
             channelStudioBtn.style.display = 'none';
+            messageChannelBtn.style.display = 'inline-block';
             updateFollowButtons(handle);
         }
 
@@ -957,7 +1061,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     adminDeleteWatchBtn.addEventListener('click', async () => {
         if (!activeCurrentVideoItem) return;
-        if (confirm('Bu videoyu silmek istediğine emin misin gardaşım?')) {
+        if (confirm('Are you sure you want to delete this video?')) {
             const res = await fetch(`/api/contents/${activeCurrentVideoItem.id}?email=${encodeURIComponent(currentEmail)}`, { method: 'DELETE' });
             if (res.ok) loadFeed('home');
         }
@@ -1057,7 +1161,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <p>${escapeHtml(c.text)}</p>
                     </div>
                 </div>
-                ${canDelete ? `<button class="delete-comment-btn" data-comment-id="${c.id}"><svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:currentColor;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>` : ''}
+                ${canDelete ? `<button class="delete-comment-btn" data-comment-id="${c.id}"><svg viewBox="0 0 24 24" class="delete-comment-icon"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>` : ''}
             `;
 
             if (canDelete) {
@@ -1277,16 +1381,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     nextStepBtn.addEventListener('click', async () => {
         if (currentStep === 2) {
-            if (selectedType === 'video' && !selectedFile) { alert('Lütfen bir video dosyası seçin!'); return; }
+            if (selectedType === 'video' && !selectedFile) { alert('Please select a video file!'); return; }
             if (selectedType === 'post' && postSubMode === 'poll') {
                 if (!pollQuestionInput.value.trim() || !pollOpt1.value.trim() || !pollOpt2.value.trim()) {
-                    alert('Lütfen anket sorusunu ve en az 2 seçeneği doldurun!');
+                    alert('Please fill in the poll question and at least 2 options!');
                     return;
                 }
             }
         }
         if (currentStep === 3) {
-            if (!contentTitleInput.value.trim()) { alert('Lütfen başlık doldurun!'); return; }
+            if (!contentTitleInput.value.trim()) { alert('Please fill in the title!'); return; }
         }
 
         if (currentStep < 4) {
