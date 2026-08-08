@@ -2,13 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>TearsDean - Pro</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
     <div class="top-loading-bar" id="topLoadingBar"></div>
@@ -25,7 +26,7 @@
         
         <div class="search-area">
             <div class="search-box-wrapper">
-                <input type="text" id="searchInput" placeholder="Search" class="search-bar">
+                <input type="text" id="searchInput" placeholder="Search videos or creators..." class="search-bar">
                 <button class="search-btn" id="searchSubmitBtn" title="Search">
                     <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" focusable="false" class="search-icon"><path fill="currentColor" d="M11 2a9 9 0 105.641 16.01.966.966 0 00.152.197l3.5 3.5a1 1 0 101.414-1.414l-3.5-3.5a1 1 0 00-.197-.153A8.96 8.96 0 0020 11a9 9 0 00-9-9Zm0 2a7 7 0 110 14 7 7 0 010-14Z"></path></svg>
                 </button>
@@ -70,7 +71,7 @@
     </header>
 
     <div class="main-layout">
-        <aside class="sidebar">
+        <aside class="sidebar desktop-sidebar">
             <ul class="nav-group">
                 <li class="nav-item active" data-nav="home">
                     <svg viewBox="0 0 24 24" class="nav-icon icon-outline"><path fill="currentColor" d="m11.485 2.143-8 4.8-2 1.2a1 1 0 001.03 1.714L3 9.567V20a2 2 0 002 2h6v-7h2v7h6a2 2 0 002-2V9.567l.485.29a1 1 0 001.03-1.714l-2-1.2-8-4.8a1 1 0 00-1.03 0ZM5 8.366l7-4.2 7 4.2V20h-4v-5.5a1.5 1.5 0 00-1.5-1.5h-3A1.5 1.5 0 009 14.5V20H5V8.366Z"/></svg>
@@ -105,8 +106,38 @@
                     <svg viewBox="0 0 24 24" class="nav-icon icon-filled"><path fill="currentColor" d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z"/></svg>
                     <span>Studio</span>
                 </li>
+                <li class="nav-item" data-nav="creators">
+                    <svg viewBox="0 0 24 24" class="nav-icon icon-outline"><path fill="currentColor" d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                    <svg viewBox="0 0 24 24" class="nav-icon icon-filled"><path fill="currentColor" d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                    <span>Find Creators</span>
+                </li>
+                <li class="nav-item" data-nav="messages">
+                    <svg viewBox="0 0 24 24" class="nav-icon icon-outline"><path fill="currentColor" d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+                    <svg viewBox="0 0 24 24" class="nav-icon icon-filled"><path fill="currentColor" d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+                    <span>Messages (DM)</span>
+                </li>
             </ul>
         </aside>
+
+        <!-- MOBİL YOUTUBE TARZI ALT BAR -->
+        <nav class="mobile-bottom-nav">
+            <div class="mobile-nav-item active" data-nav="home">
+                <svg viewBox="0 0 24 24" class="nav-icon"><path fill="currentColor" d="m11.485 2.143-8 4.8-2 1.2a1 1 0 001.03 1.714L3 9.567V20a2 2 0 002 2h6v-7h2v7h6a2 2 0 002-2V9.567l.485.29a1 1 0 001.03-1.714l-2-1.2-8-4.8a1 1 0 00-1.03 0Z"/></svg>
+                <span>Home</span>
+            </div>
+            <div class="mobile-nav-item" data-nav="posts">
+                <svg viewBox="0 0 24 24" class="nav-icon"><path fill="currentColor" d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z"/></svg>
+                <span>Posts</span>
+            </div>
+            <div class="mobile-nav-item" data-nav="messages">
+                <svg viewBox="0 0 24 24" class="nav-icon"><path fill="currentColor" d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+                <span>Chats</span>
+            </div>
+            <div class="mobile-nav-item" data-nav="profile">
+                <svg viewBox="0 0 24 24" class="nav-icon"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+                <span>Profile</span>
+            </div>
+        </nav>
 
         <main class="content-container">
             <div id="homeView">
@@ -121,6 +152,34 @@
                 <div class="posts-feed-container" id="postsFeedGrid"></div>
                 <div class="empty-feed" id="emptyPostsFeed" style="display: none;">
                     <h3>No posts or polls created yet!</h3>
+                </div>
+            </div>
+
+            <!-- KANAL ARAMA & BULMA GÖRÜNÜMÜ -->
+            <div id="creatorsView" style="display: none;">
+                <div class="studio-header">
+                    <h2>Kanal Arama (Find Creators)</h2>
+                    <p>Platformdaki tüm içerik üreticilerini ve kanalları buradan arayıp bulabilirsin gardaşım.</p>
+                </div>
+                <div class="form-group" style="max-width: 500px; margin-bottom: 24px;">
+                    <input type="text" id="creatorSearchInput" class="form-input" placeholder="Kanal ismi veya @handle yaz ara...">
+                </div>
+                <div class="creators-grid" id="creatorsGrid"></div>
+            </div>
+
+            <!-- CANLI DM / MESAJLAŞMA GÖRÜNÜMÜ -->
+            <div id="messagesView" style="display: none;">
+                <div class="dm-container-layout">
+                    <div class="dm-sidebar">
+                        <h3>Sohbetler</h3>
+                        <div class="dm-users-list" id="dmUsersList"></div>
+                    </div>
+                    <div class="dm-chat-area" id="dmChatArea">
+                        <div class="dm-welcome-box">
+                            <h3>Canlı DM Kutusu</h3>
+                            <p>Soldan bir kanal seç ve anlık olarak mesajlaşmaya başla gardaşım!</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -147,7 +206,6 @@
                 </div>
             </div>
 
-            <!-- TEARSDEAN STUDIO DASHBOARD -->
             <div id="studioView" style="display: none;">
                 <div class="studio-header">
                     <h2>TearsDean Studio</h2>
@@ -176,7 +234,7 @@
                     <button class="btn-primary" id="studioUploadNewBtn">Yeni Video / İçerik Yükle</button>
                 </div>
 
-                <h3 class="studio-section-title">Kanal İçerikleri (Admin Yetkisiyle Tüm İçerikler)</h3>
+                <h3 class="studio-section-title">Kanal İçerikleri</h3>
                 <div class="studio-table-container">
                     <table class="studio-table">
                         <thead>
