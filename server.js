@@ -1,9 +1,14 @@
 const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server);
+
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
@@ -23,6 +28,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 const dbFile = path.join(__dirname, 'contents.json');
 const usersFile = path.join(__dirname, 'users.json');
+const messagesFile = path.join(__dirname, 'messages.json');
 
 function getContents() {
     if (!fs.existsSync(dbFile)) return [];
@@ -40,8 +46,20 @@ function saveUsers(users) {
     fs.writeFileSync(usersFile, JSON.stringify(users, null, 2), 'utf8');
 }
 
+function getMessages() {
+    if (!fs.existsSync(messagesFile)) return [];
+    try { return JSON.parse(fs.readFileSync(messagesFile, 'utf8')); } catch { return []; }
+}
+function saveMessages(msgs) {
+    fs.writeFileSync(messagesFile, JSON.stringify(msgs, null, 2), 'utf8');
+}
+
 app.get('/api/contents', (req, res) => {
     res.json(getContents());
+});
+
+app.get('/api/users', (req, res) => {
+    res.json(getUsers());
 });
 
 app.post('/api/sync-user', (req, res) => {
@@ -100,7 +118,6 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
     res.json({ success: true, content: newContent });
 });
 
-// ADMIN İZİNLİ SİLME ENDPOINT'İ (ugakegqreoqte@gmail.com her şeyi silebilir!)
 app.delete('/api/contents/:id', (req, res) => {
     const id = Number(req.params.id);
     const requesterEmail = req.query.email || req.body.email;
@@ -114,7 +131,7 @@ app.delete('/api/contents/:id', (req, res) => {
         saveContents(contents);
         return res.json({ success: true });
     } else {
-        return res.status(403).json({ error: 'Bu içeriği silme yetkin yok gardaşım!' });
+        return res.status(403).json({ error: 'Yetkin yok gardaşım!' });
     }
 });
 
@@ -194,13 +211,7 @@ app.post('/api/contents/:id/comment', (req, res) => {
     if (!item.comments) item.comments = [];
     const newComment = {
         id: Date.now(),
-        text,
-        authorName,
-        authorHandle,
-        authorAvatar,
-        authorBg,
-        authorEmail,
-        time: Date.now()
+        text, authorName, authorHandle, authorAvatar, authorBg, authorEmail, time: Date.now()
     };
     item.comments.push(newComment);
     saveContents(contents);
@@ -221,4 +232,26 @@ app.delete('/api/contents/:id/comment/:commentId', (req, res) => {
     res.json({ success: true, comments: item.comments });
 });
 
-app.listen(PORT, () => console.log(`Sunucu aktif: http://localhost:${PORT}`));
+// CANLI MESAJLAŞMA (SOCKET.IO)
+io.on('connection', (socket) => {
+    socket.on('join_room', (room) => {
+        socket.join(room);
+    });
+
+    socket.on('send_message', (data) => {
+        let messages = getMessages();
+        const newMsg = { id: Date.now(), ...data, time: Date.now() };
+        messages.push(newMsg);
+        saveMessages(messages);
+        io.to(data.room).emit('receive_message', newMsg);
+    });
+});
+
+app.get('/api/messages/:room', (req, res) => {
+    const room = req.params.room;
+    const messages = getMessages();
+    const roomMsgs = messages.filter(m => m.room === room);
+    res.json(roomMsgs);
+});
+
+server.listen(PORT, () => console.log(`Sunucu aktif: http://localhost:${PORT}`));
