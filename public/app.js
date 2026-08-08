@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     const GOOGLE_CLIENT_ID = "736819800954-ufc0h3143np8u87ji87ctidcrq8pk0kc.apps.googleusercontent.com";
+    const socket = io();
 
     const createBtn = document.getElementById('createBtn');
     const createModal = document.getElementById('createModal');
@@ -41,9 +42,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const channelView = document.getElementById('channelView');
     const studioView = document.getElementById('studioView');
     const watchView = document.getElementById('watchView');
+    const creatorsView = document.getElementById('creatorsView');
+    const messagesView = document.getElementById('messagesView');
+
     const feedGrid = document.getElementById('feedGrid');
     const postsFeedGrid = document.getElementById('postsFeedGrid');
     const channelGrid = document.getElementById('channelGrid');
+    const creatorsGrid = document.getElementById('creatorsGrid');
+    const creatorSearchInput = document.getElementById('creatorSearchInput');
+    const dmUsersList = document.getElementById('dmUsersList');
+    const dmChatArea = document.getElementById('dmChatArea');
+
     const emptyFeed = document.getElementById('emptyFeed');
     const emptyPostsFeed = document.getElementById('emptyPostsFeed');
     const emptyChannelFeed = document.getElementById('emptyChannelFeed');
@@ -71,7 +80,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const likeBtn = document.getElementById('likeBtn');
     const likeCountSpan = document.getElementById('likeCount');
     const repostBtn = document.getElementById('repostBtn');
-    const repostBtnText = document.getElementById('repostBtnText');
     const adminDeleteWatchBtn = document.getElementById('adminDeleteWatchBtn');
 
     const watchTitle = document.getElementById('watchTitle');
@@ -100,7 +108,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const openAuthBtn = document.getElementById('openAuthBtn');
     const authModal = document.getElementById('authModal');
-    const authStepLogin = document.getElementById('authStepLogin');
     const googleAuthBtn = document.getElementById('googleAuthBtn');
     const closeAuthModalBtn = document.getElementById('closeAuthModalBtn');
 
@@ -112,7 +119,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const dropdownHandle = document.getElementById('dropdownHandle');
     const menuYourChannel = document.getElementById('menuYourChannel');
     const logoutBtn = document.getElementById('logoutBtn');
-    const navItems = document.querySelectorAll('.sidebar .nav-item');
+    
+    const navItems = document.querySelectorAll('.sidebar .nav-item, .mobile-bottom-nav .mobile-nav-item');
 
     const postModalOverlay = document.getElementById('postModalOverlay');
     const closePostModalBtn = document.getElementById('closePostModalBtn');
@@ -131,6 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentUserData = null;
     let activeCurrentVideoItem = null;
     let currentViewingChannelHandle = null;
+    let activeChatRoom = null;
 
     const googleAvatarColors = ['#e53935', '#d81b60', '#8e24aa', '#5e35b1', '#3949ab', '#1e88e5', '#039be5', '#00acc1', '#00897b', '#43a047', '#fb8c00', '#f4511e'];
 
@@ -315,6 +324,8 @@ document.addEventListener('DOMContentLoaded', () => {
         channelView.style.display = 'none';
         studioView.style.display = 'none';
         watchView.style.display = 'none';
+        creatorsView.style.display = viewMode === 'creators' ? 'block' : 'none';
+        messagesView.style.display = viewMode === 'messages' ? 'block' : 'none';
         if (mainVideoPlayer) mainVideoPlayer.pause();
 
         try {
@@ -329,7 +340,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const q = searchQuery.toLowerCase().trim();
                     videos = videos.filter(item => 
                         (item.title && item.title.toLowerCase().includes(q)) || 
-                        (item.authorName && item.authorName.toLowerCase().includes(q))
+                        (item.authorName && item.authorName.toLowerCase().includes(q)) ||
+                        (item.authorHandle && item.authorHandle.toLowerCase().includes(q))
                     );
                 }
 
@@ -373,21 +385,15 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (viewMode === 'posts') {
                 postsFeedGrid.innerHTML = '';
                 let posts = allContents.filter(c => c.type === 'post');
-
                 if (posts.length === 0) { emptyPostsFeed.style.display = 'block'; return; }
                 emptyPostsFeed.style.display = 'none';
-
-                posts.reverse().forEach(item => {
-                    renderPostCard(item, postsFeedGrid);
-                });
+                posts.reverse().forEach(item => renderPostCard(item, postsFeedGrid));
             } else if (viewMode === 'reposts') {
                 postsFeedGrid.innerHTML = '';
                 let reposts = allContents.filter(c => c.repostedUsers && c.repostedUsers.length > 0);
                 if (reposts.length === 0) { emptyPostsFeed.style.display = 'block'; return; }
                 emptyPostsFeed.style.display = 'none';
-                reposts.reverse().forEach(item => {
-                    renderPostCard(item, postsFeedGrid);
-                });
+                reposts.reverse().forEach(item => renderPostCard(item, postsFeedGrid));
             } else if (viewMode === 'following') {
                 feedGrid.innerHTML = '';
                 if (!isLoggedIn || !currentUserData) {
@@ -417,10 +423,161 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             } else if (viewMode === 'studio') {
                 openStudioDashboard(allContents);
+            } else if (viewMode === 'creators') {
+                loadCreatorsList();
+            } else if (viewMode === 'messages') {
+                loadMessagesView();
             }
         } catch (err) {
             console.error(err);
         }
+    }
+
+    async function loadCreatorsList(filter = '') {
+        creatorsGrid.innerHTML = '';
+        try {
+            const res = await fetch('/api/users');
+            const usersObj = await res.json();
+            const users = Object.values(usersObj);
+
+            let filtered = users;
+            if (filter.trim() !== '') {
+                const q = filter.toLowerCase().trim();
+                filtered = users.filter(u => u.name.toLowerCase().includes(q) || u.handle.toLowerCase().includes(q));
+            }
+
+            if (filtered.length === 0) {
+                creatorsGrid.innerHTML = `<p style="color:#777;">Hiç kanal bulunamadı.</p>`;
+                return;
+            }
+
+            filtered.forEach(u => {
+                const card = document.createElement('div');
+                card.className = 'creator-card';
+                const verifiedHTML = shouldVerify(u.email, u.handle) ? `<span class="verified-badge" title="Verified">${verifiedSVG}</span>` : '';
+                card.innerHTML = `
+                    <div class="creator-avatar" style="background-color: ${u.bgColor || '#a855f7'};">
+                        ${u.avatarUrl ? `<img src="${u.avatarUrl}">` : u.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div class="creator-info">
+                        <div class="name-badge-inline">
+                            <h4>${escapeHtml(u.name)}</h4>
+                            ${verifiedHTML}
+                        </div>
+                        <span>@${escapeHtml(u.handle)}</span>
+                    </div>
+                `;
+                card.addEventListener('click', () => openChannelPageByHandle(u.handle));
+                creatorsGrid.appendChild(card);
+            });
+        } catch (e) { console.error(e); }
+    }
+
+    creatorSearchInput.addEventListener('input', (e) => {
+        loadCreatorsList(e.target.value);
+    });
+
+    async function loadMessagesView() {
+        if (!isLoggedIn) { authModal.classList.add('active'); return; }
+        dmUsersList.innerHTML = '';
+        try {
+            const res = await fetch('/api/users');
+            const usersObj = await res.json();
+            const users = Object.values(usersObj).filter(u => u.handle !== currentUserData.handle);
+
+            if (users.length === 0) {
+                dmUsersList.innerHTML = `<p style="padding:16px; color:#777; font-size:13px;">Başka kullanıcı yok.</p>`;
+                return;
+            }
+
+            users.forEach(u => {
+                const item = document.createElement('div');
+                item.className = 'dm-user-item';
+                if (activeChatRoom === [currentUserData.handle, u.handle].sort().join('_')) item.classList.add('active');
+                
+                item.innerHTML = `
+                    <div class="creator-avatar" style="width:38px; height:38px; font-size:15px; background-color: ${u.bgColor || '#a855f7'};">
+                        ${u.avatarUrl ? `<img src="${u.avatarUrl}">` : u.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div class="dm-user-info">
+                        <h4>${escapeHtml(u.name)}</h4>
+                        <span>@${escapeHtml(u.handle)}</span>
+                    </div>
+                `;
+                item.addEventListener('click', () => {
+                    document.querySelectorAll('.dm-user-item').forEach(el => el.classList.remove('active'));
+                    item.classList.add('active');
+                    openChatWithUser(u);
+                });
+                dmUsersList.appendChild(item);
+            });
+        } catch (e) { console.error(e); }
+    }
+
+    function openChatWithUser(targetUser) {
+        const room = [currentUserData.handle, targetUser.handle].sort().join('_');
+        activeChatRoom = room;
+        socket.emit('join_room', room);
+
+        dmChatArea.innerHTML = `
+            <div class="dm-chat-box-active">
+                <div class="dm-chat-header">
+                    <div class="creator-avatar" style="width:36px; height:36px; font-size:14px; background-color:${targetUser.bgColor};">
+                        ${targetUser.avatarUrl ? `<img src="${targetUser.avatarUrl}">` : targetUser.name.charAt(0)}
+                    </div>
+                    <div>
+                        <h4 style="font-size:15px; color:#fff;">${escapeHtml(targetUser.name)}</h4>
+                        <span style="font-size:12px; color:#aaa;">@${escapeHtml(targetUser.handle)}</span>
+                    </div>
+                </div>
+                <div class="dm-messages-list" id="dmMessagesList"></div>
+                <div class="dm-input-area">
+                    <input type="text" id="dmMessageInput" placeholder="Bir mesaj yaz..." class="dm-input">
+                    <button class="dm-send-btn" id="dmSendBtn">Gönder</button>
+                </div>
+            </div>
+        `;
+
+        fetch(`/api/messages/${room}`)
+            .then(res => res.json())
+            .then(msgs => {
+                const list = document.getElementById('dmMessagesList');
+                list.innerHTML = '';
+                msgs.forEach(m => appendMessageBubble(m));
+            });
+
+        const sendHandler = () => {
+            const input = document.getElementById('dmMessageInput');
+            const text = input.value.trim();
+            if (!text) return;
+            socket.emit('send_message', {
+                room, senderHandle: currentUserData.handle,
+                senderName: currentUserData.name, text
+            });
+            input.value = '';
+        };
+
+        document.getElementById('dmSendBtn').addEventListener('click', sendHandler);
+        document.getElementById('dmMessageInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendHandler();
+        });
+    }
+
+    socket.on('receive_message', (msg) => {
+        if (msg.room === activeChatRoom) {
+            appendMessageBubble(msg);
+        }
+    });
+
+    function appendMessageBubble(msg) {
+        const list = document.getElementById('dmMessagesList');
+        if (!list) return;
+        const div = document.createElement('div');
+        const isMe = (msg.senderHandle === currentUserData.handle);
+        div.className = `dm-message-bubble ${isMe ? 'sent' : 'received'}`;
+        div.textContent = msg.text;
+        list.appendChild(div);
+        list.scrollTop = list.scrollHeight;
     }
 
     function openStudioDashboard(allContents) {
@@ -429,9 +586,10 @@ document.addEventListener('DOMContentLoaded', () => {
         postsView.style.display = 'none';
         channelView.style.display = 'none';
         watchView.style.display = 'none';
+        creatorsView.style.display = 'none';
+        messagesView.style.display = 'none';
         studioView.style.display = 'block';
 
-        // ADMIN (ugakegqreoqte@gmail.com) TÜM İÇERİKLERİ GÖRÜR VE SİLEBİLİR, DİĞERLERİ KENDİSİNİ
         const isAdmin = (currentEmail === 'ugakegqreoqte@gmail.com');
         const displayContents = isAdmin ? allContents : allContents.filter(c => c.authorHandle === currentUserData.handle);
         const totalViews = displayContents.reduce((acc, curr) => acc + (curr.viewedUsers ? curr.viewedUsers.length : 1), 0);
@@ -546,7 +704,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (canDeletePost) {
             card.querySelector('.admin-delete-post-btn').addEventListener('click', async () => {
-                if (confirm('Admin yetkisiyle bu postu silmek istediğine emin misin gardaşım?')) {
+                if (confirm('Bu postu silmek istediğine emin misin gardaşım?')) {
                     await fetch(`/api/contents/${item.id}?email=${encodeURIComponent(currentEmail)}`, { method: 'DELETE' });
                     loadFeed('posts');
                 }
@@ -644,7 +802,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="yt-channel-avatar" style="background-color: ${c.authorBg};">${c.authorAvatar ? `<img src="${c.authorAvatar}">` : c.authorName.charAt(0)}</div>
                         <div class="comment-content"><h5>@${c.authorHandle} • <span>${timeAgo(c.id)}</span></h5><p>${escapeHtml(c.text)}</p></div>
                     </div>
-                    ${canDelete ? `<button class="delete-comment-btn" data-comment-id="${c.id}"><svg viewBox="0 0 24 24" class="delete-comment-icon"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>` : ''}
+                    ${canDelete ? `<button class="delete-comment-btn" data-comment-id="${c.id}"><svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:currentColor;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>` : ''}
                 `;
                 if (canDelete) {
                     div.querySelector('.delete-comment-btn').addEventListener('click', async () => {
@@ -689,6 +847,8 @@ document.addEventListener('DOMContentLoaded', () => {
         postsView.style.display = 'none';
         studioView.style.display = 'none';
         watchView.style.display = 'none';
+        creatorsView.style.display = 'none';
+        messagesView.style.display = 'none';
         channelView.style.display = 'block';
         if (mainVideoPlayer) mainVideoPlayer.pause();
         currentViewingChannelHandle = handle;
@@ -706,6 +866,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (shouldVerify(ch.authorEmail, ch.authorHandle)) verifiedBadgeChannel.style.display = 'inline-flex';
             else verifiedBadgeChannel.style.display = 'none';
+        } else {
+            const userRes = await fetch('/api/users');
+            const users = await userRes.json();
+            const foundUser = Object.values(users).find(u => u.handle === handle);
+            if (foundUser) {
+                channelProfileName.textContent = foundUser.name;
+                channelProfileHandle.textContent = `@${foundUser.handle}`;
+                if (foundUser.avatarUrl) channelBigAvatar.innerHTML = `<img src="${foundUser.avatarUrl}">`;
+                else { channelBigAvatar.style.backgroundColor = foundUser.bgColor || '#a855f7'; channelBigAvatar.textContent = foundUser.name.charAt(0).toUpperCase(); }
+            }
         }
 
         const isSelf = isLoggedIn && currentUserData && currentUserData.handle === handle;
@@ -735,9 +905,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    channelStudioBtn.addEventListener('click', () => {
-        loadFeed('studio');
-    });
+    channelStudioBtn.addEventListener('click', () => loadFeed('studio'));
 
     async function openWatchPage(item) {
         triggerLoadingBar();
@@ -745,6 +913,8 @@ document.addEventListener('DOMContentLoaded', () => {
         postsView.style.display = 'none';
         channelView.style.display = 'none';
         studioView.style.display = 'none';
+        creatorsView.style.display = 'none';
+        messagesView.style.display = 'none';
         watchView.style.display = 'flex';
         activeCurrentVideoItem = item;
 
@@ -769,7 +939,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (item.repostedUsers && currentUserData && item.repostedUsers.includes(currentUserData.handle)) repostBtn.classList.add('active');
         else repostBtn.classList.remove('active');
 
-        // ADMIN (ugakegqreoqte@gmail.com) İZLEME SAYFASINDAN DA DİREKT SİLEBİLSİN
         const isAdmin = (currentEmail === 'ugakegqreoqte@gmail.com');
         if (isLoggedIn && (isAdmin || item.authorEmail === currentEmail)) {
             adminDeleteWatchBtn.style.display = 'flex';
@@ -788,11 +957,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     adminDeleteWatchBtn.addEventListener('click', async () => {
         if (!activeCurrentVideoItem) return;
-        if (confirm('Admin yetkisiyle bu videoyu silmek istediğine emin misin gardaşım?')) {
+        if (confirm('Bu videoyu silmek istediğine emin misin gardaşım?')) {
             const res = await fetch(`/api/contents/${activeCurrentVideoItem.id}?email=${encodeURIComponent(currentEmail)}`, { method: 'DELETE' });
-            if (res.ok) {
-                loadFeed('home');
-            }
+            if (res.ok) loadFeed('home');
         }
     });
 
@@ -846,11 +1013,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         const data = await res.json();
         if (data.success) {
-            if (data.reposted) {
-                repostBtn.classList.add('active');
-            } else {
-                repostBtn.classList.remove('active');
-            }
+            if (data.reposted) repostBtn.classList.add('active');
+            else repostBtn.classList.remove('active');
         }
     });
 
@@ -893,7 +1057,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <p>${escapeHtml(c.text)}</p>
                     </div>
                 </div>
-                ${canDelete ? `<button class="delete-comment-btn" data-comment-id="${c.id}"><svg viewBox="0 0 24 24" class="delete-comment-icon"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>` : ''}
+                ${canDelete ? `<button class="delete-comment-btn" data-comment-id="${c.id}"><svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:currentColor;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>` : ''}
             `;
 
             if (canDelete) {
@@ -924,8 +1088,15 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         searchInput.value = '';
         navItems.forEach(n => n.classList.remove('active'));
-        document.querySelector('.nav-item[data-nav="home"]').classList.add('active');
+        document.querySelectorAll('.nav-item[data-nav="home"], .mobile-nav-item[data-nav="home"]').forEach(el => el.classList.add('active'));
         loadFeed('home');
+    });
+
+    searchInput.addEventListener('input', (e) => {
+        loadFeed('home', e.target.value);
+    });
+    searchSubmitBtn.addEventListener('click', () => {
+        loadFeed('home', searchInput.value);
     });
 
     function initGoogleAuth() {
@@ -939,9 +1110,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             headers: { Authorization: `Bearer ${resp.access_token}` }
                         })
                         .then(res => res.json())
-                        .then(data => {
-                            syncUserWithBackend(data.email || "user@gmail.com", data.name || 'User', data.picture);
-                        });
+                        .then(data => syncUserWithBackend(data.email || "user@gmail.com", data.name || 'User', data.picture));
                     }
                 }
             });
@@ -993,9 +1162,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loadFeed('home');
     });
 
-    openAuthBtn.addEventListener('click', () => {
-        authModal.classList.add('active');
-    });
+    openAuthBtn.addEventListener('click', () => authModal.classList.add('active'));
     closeAuthModalBtn.addEventListener('click', () => authModal.classList.remove('active'));
 
     navItems.forEach(item => {
@@ -1007,13 +1174,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 createModal.classList.add('active');
                 return;
             }
+            if (pageTarget === 'profile') {
+                if (!isLoggedIn) { authModal.classList.add('active'); return; }
+                openChannelPageByHandle(currentUserData.handle);
+                return;
+            }
+
             navItems.forEach(n => n.classList.remove('active'));
-            item.classList.add('active');
+            document.querySelectorAll(`[data-nav="${pageTarget}"]`).forEach(el => el.classList.add('active'));
+
             if (pageTarget === 'home') loadFeed('home');
             if (pageTarget === 'posts') loadFeed('posts');
             if (pageTarget === 'following') loadFeed('following');
             if (pageTarget === 'reposts') loadFeed('reposts');
             if (pageTarget === 'studio') loadFeed('studio');
+            if (pageTarget === 'creators') loadFeed('creators');
+            if (pageTarget === 'messages') loadFeed('messages');
         });
     });
 
@@ -1095,32 +1271,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const dataUrl = canvas.toDataURL('image/jpeg');
 
             chosenThumbnailUrl = dataUrl;
-            autoThumbGrid.innerHTML = `
-                <div class="auto-thumb-option selected">
-                    <img src="${dataUrl}">
-                </div>
-            `;
+            autoThumbGrid.innerHTML = `<div class="auto-thumb-option selected"><img src="${dataUrl}"></div>`;
         };
     }
 
     nextStepBtn.addEventListener('click', async () => {
         if (currentStep === 2) {
-            if (selectedType === 'video' && !selectedFile) {
-                alert('Lütfen bir video dosyası seçin gardaşım!');
-                return;
-            }
+            if (selectedType === 'video' && !selectedFile) { alert('Lütfen bir video dosyası seçin!'); return; }
             if (selectedType === 'post' && postSubMode === 'poll') {
                 if (!pollQuestionInput.value.trim() || !pollOpt1.value.trim() || !pollOpt2.value.trim()) {
-                    alert('Lütfen anket sorusunu ve en az 2 seçeneği doldurun gardaşım!');
+                    alert('Lütfen anket sorusunu ve en az 2 seçeneği doldurun!');
                     return;
                 }
             }
         }
         if (currentStep === 3) {
-            if (!contentTitleInput.value.trim()) {
-                alert('Lütfen başlık veya açıklama kısmını doldurun gardaşım!');
-                return;
-            }
+            if (!contentTitleInput.value.trim()) { alert('Lütfen başlık doldurun!'); return; }
         }
 
         if (currentStep < 4) {
@@ -1143,10 +1309,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 formData.append('duration', formatDuration(videoDurationSeconds));
             } else {
                 if (postSubMode === 'poll') {
-                    const opts = [
-                        pollOpt1.value.trim(), pollOpt2.value.trim(),
-                        pollOpt3.value.trim(), pollOpt4.value.trim()
-                    ].filter(Boolean);
+                    const opts = [pollOpt1.value.trim(), pollOpt2.value.trim(), pollOpt3.value.trim(), pollOpt4.value.trim()].filter(Boolean);
                     formData.append('pollOptions', JSON.stringify(opts));
                     formData.append('thumbnailUrl', '');
                 } else {
@@ -1191,9 +1354,9 @@ document.addEventListener('DOMContentLoaded', () => {
         chosenThumbnailUrl = null;
         videoDurationSeconds = 0;
         fileInput.value = '';
-        if(postImageInput) postImageInput.value = '';
-        if(fileInfoBox) fileInfoBox.style.display = 'none';
-        if(postFileInfo) postFileInfo.style.display = 'none';
+        if (postImageInput) postImageInput.value = '';
+        if (fileInfoBox) fileInfoBox.style.display = 'none';
+        if (postFileInfo) postFileInfo.style.display = 'none';
         contentTitleInput.value = '';
         contentDescInput.value = '';
         if(pollQuestionInput) pollQuestionInput.value = '';
